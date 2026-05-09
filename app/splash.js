@@ -1,4 +1,4 @@
-﻿// app/splash.js
+// app/splash.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -58,10 +58,10 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        {/* ✅ Using your actual image */}
-        <Image source={require('../images/splash-icon.png')} style={styles.logo} />
+        {/* ? Using your actual image */}
+        <Image source={require('../assets/images/icon.png')} style={styles.logo} />
         
-        <Text style={styles.title}>⚽ Football Coach</Text>
+        <Text style={styles.title}>? Football Coach</Text>
         <Text style={styles.subtitle}>Your Personal Training Assistant</Text>
         
         <View style={styles.loadingContainer}>
@@ -80,7 +80,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d1b2a', justifyContent: 'center', alignItems: 'center' },
   content: { alignItems: 'center' },
-  // ✅ Image styles for your splash-icon.png
+  // ? Image styles for your splash-icon.png
   logo: { 
     width: 150, 
     height: 150, 
