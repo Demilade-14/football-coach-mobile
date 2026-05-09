@@ -24,7 +24,7 @@ jobs:
         uses: android-actions/setup-android@v3
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/football-coach-release.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/football-coach-release.keystore
       - name: Build Release APK
         run: |
           cd android
