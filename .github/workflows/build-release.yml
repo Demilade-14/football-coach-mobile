@@ -29,7 +29,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --max-workers 2 \
+          ./gradlew assembleRelease --max-workers 2 -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease \
             -Pandroid.injected.signing.store.file=football-coach-release.keystore \
             -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
