@@ -24,7 +24,7 @@ jobs:
         uses: android-actions/setup-android@v3
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/android/app/football-coach-release.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ github.workspace }}/android/app/football-coach-release.keystore
       - name: Build Release APK
         run: |
           cd android
@@ -40,3 +40,4 @@ jobs:
           name: release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 7
+
