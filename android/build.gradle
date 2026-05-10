@@ -3,10 +3,6 @@
 buildscript {
   repositories {
     // ✅ Fast mirrors first
-    maven { url 'https://maven.aliyun.com/repository/central' }
-    maven { url 'https://maven.aliyun.com/repository/google' }
-    maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
-    maven { url 'https://maven.aliyun.com/repository/jcenter' }
     google()
     mavenCentral()
   }
@@ -20,10 +16,6 @@ buildscript {
 allprojects {
   repositories {
     // ✅ Fast mirrors first
-    maven { url 'https://maven.aliyun.com/repository/central' }
-    maven { url 'https://maven.aliyun.com/repository/google' }
-    maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
-    maven { url 'https://maven.aliyun.com/repository/jcenter' }
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
