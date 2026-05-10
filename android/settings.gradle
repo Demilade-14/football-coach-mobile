@@ -44,3 +44,4 @@ expoAutolinking.useExpoVersionCatalog()
 include ':app'
 includeBuild(expoAutolinking.reactNativeGradlePlugin)
 
+
