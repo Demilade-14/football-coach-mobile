@@ -1,43 +1,101 @@
-name: Build Release APK
+﻿name: Build Release APK
+
 on:
   push:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches: [main, master]
+  workflow_dispatch:  # ✅ Manual trigger
+
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EXPO_NO_DOTENV: 1  # Prevent .env conflicts in CI
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
+          node-version: '20.19.4'  # ✅ Expo 55 minimum
+          cache: 'npm'
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '17'  # ✅ Required for Gradle 9 + JKS
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps  # ✅ ci is faster + stricter than install
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ github.workspace }}/android/app/football-coach-release.keystore
+          mkdir -p android/app
+          printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/football-coach-release.keystore
+          chmod 600 android/app/football-coach-release.keystore  # ✅ Secure permissions
+
+      # 🔍 DEBUG STEP: Verify keystore was decoded correctly
+      - name: Debug: Verify keystore in CI
+        run: |
+          echo "🔍 Keystore file size: $(ls -la android/app/football-coach-release.keystore)"
+          echo "🔍 Testing keystore read..."
+          keytool -list \
+            -keystore android/app/football-coach-release.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.KEY_ALIAS }}" \
+            2>&1 | head -10 || echo "❌ Failed to read keystore"
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+
+      # ✅ Optional: Prebuild if android/ isn't committed
+      # - name: Expo Prebuild
+      #   run: npx expo prebuild --clean --platform android
+
       - name: Build Release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --max-workers 2 -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintDebug -x lintRelease \
+          ./gradlew clean assembleRelease \
+            --no-daemon \
+            --max-workers 2 \
+            -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease \
             -Pandroid.injected.signing.store.file=${{ github.workspace }}/android/app/football-coach-release.keystore \
             -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
-      - name: Upload APK
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
+            --stacktrace  # ✅ Better error messages if it fails
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 7
 
+      # ✅ Debug: Upload logs if build fails
+      - name: Upload Build Logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            android/app/build/reports/
+            android/build/reports/
+            android/app/build/outputs/logs/
