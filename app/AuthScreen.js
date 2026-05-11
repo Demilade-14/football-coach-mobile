@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, isFirebaseInitialized } from './utils/firebaseConfig';
+import { auth, isFirebaseInitialized, firebaseInitError } from './utils/firebaseConfig';
 
 const AuthScreen = () => {
   const router = useRouter();
@@ -41,12 +41,22 @@ const AuthScreen = () => {
     }
   };
 
-  // Loading state if Firebase isn't ready
+  // Display an error if Firebase initialization failed
   if (!isFirebaseInitialized) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#ffd700" />
-        <Text style={styles.loadingText}>Initializing Firebase...</Text>
+        {firebaseInitError ? (
+          <>
+            <Text style={styles.errorTitle}>Firebase initialization failed</Text>
+            <Text style={styles.errorText}>{firebaseInitError.message}</Text>
+            <Text style={styles.errorHint}>Check your Expo config or .env values.</Text>
+          </>
+        ) : (
+          <>
+            <ActivityIndicator size="large" color="#ffd700" />
+            <Text style={styles.loadingText}>Initializing Firebase...</Text>
+          </>
+        )}
       </View>
     );
   }
@@ -150,6 +160,9 @@ const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: '#5a7a9c' },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
   switchText: { color: '#a8dadc', textAlign: 'center', marginTop: 16, fontSize: 14 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d1b2a' },
-  loadingText: { color: '#a8dadc', marginTop: 12, fontSize: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d1b2a', padding: 24 },
+  loadingText: { color: '#a8dadc', marginTop: 12, fontSize: 16, textAlign: 'center' },
+  errorTitle: { color: '#ff6b6b', fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  errorText: { color: '#f1faee', fontSize: 14, textAlign: 'center', marginBottom: 4 },
+  errorHint: { color: '#a8dadc', fontSize: 13, textAlign: 'center' },
 });

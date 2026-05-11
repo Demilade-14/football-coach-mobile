@@ -42,7 +42,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@react-native-community/cli": "latest"
+    "@react-native-community/cli": "latest",
+    "dotenv": "^16.1.4"
   },
   "private": true
 }

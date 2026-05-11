@@ -1,46 +1,52 @@
 ﻿// app/utils/firebaseConfig.js
+import Constants from 'expo-constants';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Firebase configuration from environment variables
+const expoExtra = Constants.expoConfig?.extra || {};
+
+// Firebase configuration from Expo config extra values or environment variables
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  apiKey: expoExtra.EXPO_PUBLIC_FIREBASE_API_KEY || process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: expoExtra.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: expoExtra.EXPO_PUBLIC_FIREBASE_PROJECT_ID || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: expoExtra.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: expoExtra.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: expoExtra.EXPO_PUBLIC_FIREBASE_APP_ID || process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase (singleton pattern to avoid re-initialization)
 let app;
 let auth;
 let db;
+let firebaseInitError = null;
 
 try {
-  // Check if app already exists (prevents duplicate initialization)
+  const missingKeys = Object.entries(firebaseConfig)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  if (missingKeys.length) {
+    throw new Error(`Missing Firebase config keys: ${missingKeys.join(', ')}`);
+  }
+
   if (!getApps().length) {
     app = initializeApp(firebaseConfig);
   } else {
     app = getApp();
   }
-  
-  // Initialize Auth with React Native persistence
+
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
+    persistence: getReactNativePersistence(AsyncStorage),
   });
-  
-  // Initialize Firestore
+
   db = getFirestore(app);
-  
 } catch (error) {
+  firebaseInitError = error;
   console.error('Firebase initialization error:', error);
 }
 
-// Helper: Check if Firebase is ready
 const isFirebaseInitialized = !!app && !!auth && !!db;
 
-// Export everything for use in other files
-export { app, auth, db, isFirebaseInitialized };
+export { app, auth, db, isFirebaseInitialized, firebaseInitError };
