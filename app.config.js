@@ -1,24 +1,65 @@
-const dotenv = require('dotenv');
-const appJson = require('./app.json');
-
-dotenv.config();
-
-const env = process.env;
-
-module.exports = {
+export default {
   expo: {
-    ...appJson.expo,
-    extra: {
-      ...appJson.expo.extra,
-      EXPO_PUBLIC_FIREBASE_API_KEY: env.EXPO_PUBLIC_FIREBASE_API_KEY,
-      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      EXPO_PUBLIC_FIREBASE_PROJECT_ID: env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      EXPO_PUBLIC_FIREBASE_APP_ID: env.EXPO_PUBLIC_FIREBASE_APP_ID,
-      EXPO_PUBLIC_BACKEND_URL: env.EXPO_PUBLIC_BACKEND_URL,
-      EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY: env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-      EXPO_PUBLIC_CLAUDE_API_KEY: env.EXPO_PUBLIC_CLAUDE_API_KEY,
+    name: "Football Coach",
+    slug: "football-coach-mobile",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/images/icon.png",
+    userInterfaceStyle: "dark",
+    splash: {
+      image: "./assets/images/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#0d1b2a"
     },
-  },
-};
+    assetBundlePatterns: ["**/*"],
+    plugins: [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          photosPermission: "Allow Football Coach to access your photos to set your player profile picture.",
+          cameraPermission: "Allow Football Coach to access your camera to take a profile picture."
+        }
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-web-browser"
+    ],
+    scheme: "footballcoach",
+    android: {
+      package: "com.zeedain14.footballcoachmobile",
+      versionCode: 1,
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/android-icon-foreground.png",
+        backgroundColor: "#0d1b2a"
+      },
+      permissions: [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    ios: {
+      bundleIdentifier: "com.zeedain14.footballcoachmobile"
+    },
+    web: {
+      favicon: "./assets/images/favicon.png"
+    },
+    owner: "zeedain14",
+    extra: {
+      eas: {
+        projectId: "b6b2547d-284d-4bc3-9237-fa1eeee0d4e5"
+      },
+      // 🔥 Firebase config - read from env vars
+      firebase: {
+        apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+      },
+      backendUrl: process.env.EXPO_PUBLIC_BACKEND_URL,
+    }
+  }
+}
