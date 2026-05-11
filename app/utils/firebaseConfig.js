@@ -4,17 +4,19 @@ import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Get Firebase config from app.config.js extra.firebase
-const extra = Constants.expoConfig?.extra || {};
+// Get Firebase config from Expo config or manifest extra values
+const expoExtra = Constants.expoConfig?.extra;
+const manifestExtra = Constants.manifest?.extra || Constants.manifest2?.extra;
+const extra = expoExtra || manifestExtra || {};
 const firebaseData = extra.firebase || {};
-
+const normalize = (value) => (typeof value === 'string' ? value.trim() : value);
 const firebaseConfig = {
-  apiKey: firebaseData.apiKey,
-  authDomain: firebaseData.authDomain,
-  projectId: firebaseData.projectId,
-  storageBucket: firebaseData.storageBucket,
-  messagingSenderId: firebaseData.messagingSenderId,
-  appId: firebaseData.appId,
+  apiKey: normalize(firebaseData.apiKey) || normalize(process.env.EXPO_PUBLIC_FIREBASE_API_KEY),
+  authDomain: normalize(firebaseData.authDomain) || normalize(process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN),
+  projectId: normalize(firebaseData.projectId) || normalize(process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID),
+  storageBucket: normalize(firebaseData.storageBucket) || normalize(process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: normalize(firebaseData.messagingSenderId) || normalize(process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+  appId: normalize(firebaseData.appId) || normalize(process.env.EXPO_PUBLIC_FIREBASE_APP_ID),
 };
 
 // Debug log (remove in production)
@@ -50,17 +52,32 @@ try {
     app = initializeApp(firebaseConfig);
     console.log('✅ Firebase App initialized');
   } else {
-    console.log('ℹ️ Firebase App already exists');
     app = getApp();
+    console.log('ℹ️ Firebase App already exists');
   }
-  
+
   // Initialize Auth with React Native persistence
   console.log('🔐 Initializing Firebase Auth...');
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
-  console.log('✅ Firebase Auth initialized');
-  
+  try {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+    console.log('✅ Firebase Auth initialized');
+  } catch (authError) {
+    console.warn('⚠️ initializeAuth failed; trying getAuth fallback:', authError?.message);
+    try {
+      auth = getAuth(app);
+      console.log('✅ Firebase Auth obtained via getAuth fallback');
+    } catch (fallbackError) {
+      console.error('❌ Firebase Auth fallback failed:', fallbackError?.message);
+      throw authError;
+    }
+  }
+
+  if (!auth) {
+    throw new Error('Firebase Auth instance could not be created');
+  }
+
   // Initialize Firestore
   console.log('📚 Initializing Firestore...');
   db = getFirestore(app);

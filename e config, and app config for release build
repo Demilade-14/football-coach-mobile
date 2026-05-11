@@ -1,0 +1,73 @@
+[1mdiff --git a/app/utils/firebaseConfig.js b/app/utils/firebaseConfig.js[m
+[1mindex 2d124fc..6c8603c 100644[m
+[1m--- a/app/utils/firebaseConfig.js[m
+[1m+++ b/app/utils/firebaseConfig.js[m
+[36m@@ -4,17 +4,19 @@[m [mimport { getFirestore } from 'firebase/firestore';[m
+ import AsyncStorage from '@react-native-async-storage/async-storage';[m
+ import Constants from 'expo-constants';[m
+ [m
+[31m-// Get Firebase config from app.config.js extra.firebase[m
+[31m-const extra = Constants.expoConfig?.extra || {};[m
+[32m+[m[32m// Get Firebase config from Expo config or manifest extra values[m[41m[m
+[32m+[m[32mconst expoExtra = Constants.expoConfig?.extra;[m[41m[m
+[32m+[m[32mconst manifestExtra = Constants.manifest?.extra || Constants.manifest2?.extra;[m[41m[m
+[32m+[m[32mconst extra = expoExtra || manifestExtra || {};[m[41m[m
+ const firebaseData = extra.firebase || {};[m
+[31m-[m
+[32m+[m[32mconst normalize = (value) => (typeof value === 'string' ? value.trim() : value);[m[41m[m
+ const firebaseConfig = {[m
+[31m-  apiKey: firebaseData.apiKey,[m
+[31m-  authDomain: firebaseData.authDomain,[m
+[31m-  projectId: firebaseData.projectId,[m
+[31m-  storageBucket: firebaseData.storageBucket,[m
+[31m-  messagingSenderId: firebaseData.messagingSenderId,[m
+[31m-  appId: firebaseData.appId,[m
+[32m+[m[32m  apiKey: normalize(firebaseData.apiKey) || normalize(process.env.EXPO_PUBLIC_FIREBASE_API_KEY),[m[41m[m
+[32m+[m[32m  authDomain: normalize(firebaseData.authDomain) || normalize(process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN),[m[41m[m
+[32m+[m[32m  projectId: normalize(firebaseData.projectId) || normalize(process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID),[m[41m[m
+[32m+[m[32m  storageBucket: normalize(firebaseData.storageBucket) || normalize(process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET),[m[41m[m
+[32m+[m[32m  messagingSenderId: normalize(firebaseData.messagingSenderId) || normalize(process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),[m[41m[m
+[32m+[m[32m  appId: normalize(firebaseData.appId) || normalize(process.env.EXPO_PUBLIC_FIREBASE_APP_ID),[m[41m[m
+ };[m
+ [m
+ // Debug log (remove in production)[m
+[36m@@ -50,17 +52,32 @@[m [mtry {[m
+     app = initializeApp(firebaseConfig);[m
+     console.log('✅ Firebase App initialized');[m
+   } else {[m
+[31m-    console.log('ℹ️ Firebase App already exists');[m
+     app = getApp();[m
+[32m+[m[32m    console.log('ℹ️ Firebase App already exists');[m[41m[m
+   }[m
+[31m-  [m
+[32m+[m[41m[m
+   // Initialize Auth with React Native persistence[m
+   console.log('🔐 Initializing Firebase Auth...');[m
+[31m-  auth = initializeAuth(app, {[m
+[31m-    persistence: getReactNativePersistence(AsyncStorage)[m
+[31m-  });[m
+[31m-  console.log('✅ Firebase Auth initialized');[m
+[31m-  [m
+[32m+[m[32m  try {[m[41m[m
+[32m+[m[32m    auth = initializeAuth(app, {[m[41m[m
+[32m+[m[32m      persistence: getReactNativePersistence(AsyncStorage),[m[41m[m
+[32m+[m[32m    });[m[41m[m
+[32m+[m[32m    console.log('✅ Firebase Auth initialized');[m[41m[m
+[32m+[m[32m  } catch (authError) {[m[41m[m
+[32m+[m[32m    console.warn('⚠️ initializeAuth failed; trying getAuth fallback:', authError?.message);[m[41m[m
+[32m+[m[32m    try {[m[41m[m
+[32m+[m[32m      auth = getAuth(app);[m[41m[m
+[32m+[m[32m      console.log('✅ Firebase Auth obtained via getAuth fallback');[m[41m[m
+[32m+[m[32m    } catch (fallbackError) {[m[41m[m
+[32m+[m[32m      console.error('❌ Firebase Auth fallback failed:', fallbackError?.message);[m[41m[m
+[32m+[m[32m      throw authError;[m[41m[m
+[32m+[m[32m    }[m[41m[m
+[32m+[m[32m  }[m[41m[m
+[32m+[m[41m[m
+[32m+[m[32m  if (!auth) {[m[41m[m
+[32m+[m[32m    throw new Error('Firebase Auth instance could not be created');[m[41m[m
+[32m+[m[32m  }[m[41m[m
+[32m+[m[41m[m
+   // Initialize Firestore[m
+   console.log('📚 Initializing Firestore...');[m
+   db = getFirestore(app);[m
