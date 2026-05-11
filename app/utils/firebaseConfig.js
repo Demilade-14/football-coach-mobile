@@ -4,15 +4,17 @@ import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Get Firebase config from app.config.js extra environment variables
+// Get Firebase config from app.config.js extra.firebase
 const extra = Constants.expoConfig?.extra || {};
+const firebaseData = extra.firebase || {};
+
 const firebaseConfig = {
-  apiKey: extra.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: extra.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: extra.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: extra.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: extra.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: extra.EXPO_PUBLIC_FIREBASE_APP_ID,
+  apiKey: firebaseData.apiKey,
+  authDomain: firebaseData.authDomain,
+  projectId: firebaseData.projectId,
+  storageBucket: firebaseData.storageBucket,
+  messagingSenderId: firebaseData.messagingSenderId,
+  appId: firebaseData.appId,
 };
 
 // Debug log (remove in production)
