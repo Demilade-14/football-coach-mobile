@@ -1,9 +1,5 @@
-const dotenv = require('dotenv');
-const path = require('path');
 const appJson = require('./app.json');
 
-// Load env from the project root no matter which working directory Gradle or CI is using
-dotenv.config({ path: path.resolve(__dirname, '.env') });
 const env = process.env;
 
 module.exports = {
