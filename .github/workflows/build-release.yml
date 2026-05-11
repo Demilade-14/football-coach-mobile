@@ -3,14 +3,14 @@
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:  # ✅ Manual trigger
+  workflow_dispatch:
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      EXPO_NO_DOTENV: 1  # Prevent .env conflicts in CI
+      EXPO_NO_DOTENV: 1  # Prevents .env conflicts in CI
 
     steps:
       - name: Checkout code
@@ -19,51 +19,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.4'  # ✅ Expo 55 minimum
+          node-version: '20'  # Resolves to latest 20.x (>=20.19.4 required for Expo 55)
           cache: 'npm'
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'  # ✅ Required for Gradle 9 + PKCS12
+          java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps  # ✅ ci is faster + stricter than install
-
-      - name: Show GitHub trigger info
-        run: |
-          set -euo pipefail
-          echo "GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
-          echo "GITHUB_REF=$GITHUB_REF"
-          echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
-          echo "GITHUB_ACTOR=$GITHUB_ACTOR"
-          echo "GITHUB_HEAD_REF=${GITHUB_HEAD_REF:-}"
-          echo "GITHUB_BASE_REF=${GITHUB_BASE_REF:-}"
-
-      - name: Detect forked pull request
-        if: github.event_name == 'pull_request'
-        run: |
-          set -euo pipefail
-          echo "pull_request.head.repo.full_name=${{ github.event.pull_request.head.repo.full_name }}"
-          echo "pull_request.base.repo.full_name=${{ github.event.pull_request.base.repo.full_name }}"
-          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.event.pull_request.base.repo.full_name }}" ]; then
-            echo "Forked PR detected"
-          else
-            echo "Not a forked PR"
-          fi
-
-      - name: Validate signing secrets
-        run: |
-          set -euo pipefail
-          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.KEY_ALIAS }}" ] || [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
-            echo "Missing required signing secrets. Please set KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD."
-            echo "If this run is from a forked PR or external contributor, repository secrets may be unavailable."
-            exit 1
-          fi
+        run: npm ci --legacy-peer-deps
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -75,27 +44,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Validate Signing Secrets
+        run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ] || \
+             [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ] || \
+             [ -z "${{ secrets.KEY_ALIAS }}" ] || \
+             [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
+            echo "::error::Missing required signing secrets. Please add KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD to repository secrets."
+            exit 1
+          fi
+
       - name: Decode Keystore
         run: |
-          set -euo pipefail
           mkdir -p android/app
-          printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\r\n' | base64 --decode > android/app/football-coach-release.keystore
-          chmod 600 android/app/football-coach-release.keystore  # ✅ Secure permissions
-
-      - name: Debug signing vars
-        run: |
-          set -euo pipefail
-          echo "KEY_ALIAS length: ${#KEY_ALIAS}"
-          echo "KEYSTORE_PASSWORD length: ${#KEYSTORE_PASSWORD}"
-          echo "KEY_PASSWORD length: ${#KEY_PASSWORD}"
-        env:
-          KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
-          KEYSTORE_PASSWORD: "${{ secrets.KEYSTORE_PASSWORD }}"
-          KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
-
-      # ✅ Optional: Prebuild if android/ isn't committed
-      # - name: Expo Prebuild
-      #   run: npx expo prebuild --clean --platform android
+          printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\r\n' | base64 -d > android/app/football-coach-release.keystore
+          chmod 600 android/app/football-coach-release.keystore
 
       - name: Build Release APK
         run: |
@@ -109,17 +72,17 @@ jobs:
             -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
             -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
-            --stacktrace  # ✅ Better error messages if it fails
+            --stacktrace
 
       - name: Upload APK Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 7
 
-      # ✅ Debug: Upload logs if build fails
-      - name: Upload Build Logs (on failure)
+      - name: Upload Build Logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
