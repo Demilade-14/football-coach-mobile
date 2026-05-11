@@ -34,11 +34,34 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps  # ✅ ci is faster + stricter than install
 
+      - name: Show GitHub trigger info
+        run: |
+          set -euo pipefail
+          echo "GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
+          echo "GITHUB_ACTOR=$GITHUB_ACTOR"
+          echo "GITHUB_HEAD_REF=${GITHUB_HEAD_REF:-}"
+          echo "GITHUB_BASE_REF=${GITHUB_BASE_REF:-}"
+
+      - name: Detect forked pull request
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          echo "pull_request.head.repo.full_name=${{ github.event.pull_request.head.repo.full_name }}"
+          echo "pull_request.base.repo.full_name=${{ github.event.pull_request.base.repo.full_name }}"
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.event.pull_request.base.repo.full_name }}" ]; then
+            echo "Forked PR detected"
+          else
+            echo "Not a forked PR"
+          fi
+
       - name: Validate signing secrets
         run: |
           set -euo pipefail
           if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.KEY_ALIAS }}" ] || [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
             echo "Missing required signing secrets. Please set KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD."
+            echo "If this run is from a forked PR or external contributor, repository secrets may be unavailable."
             exit 1
           fi
 
