@@ -4,18 +4,22 @@
     "slug": "football-coach-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
+
     "icon": "./assets/images/icon.png",
+
     "userInterfaceStyle": "dark",
+
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0d1b2a"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+
+    "assetBundlePatterns": ["**/*"],
+
     "plugins": [
       "expo-router",
+
       [
         "expo-image-picker",
         {
@@ -23,31 +27,38 @@
           "cameraPermission": "Allow Football Coach to access your camera to take a profile picture."
         }
       ],
+
       "expo-font",
       "expo-image",
       "expo-sharing",
       "expo-web-browser"
     ],
+
     "scheme": "footballcoach",
+
     "android": {
       "package": "com.zeedain14.footballcoachmobile",
+
       "versionCode": 1,
+
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundColor": "#0d1b2a"
       },
-      "permissions": [
-        "INTERNET",
-        "ACCESS_NETWORK_STATE"
-      ]
+
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
     },
+
     "ios": {
       "bundleIdentifier": "com.zeedain14.footballcoachmobile"
     },
+
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
+
     "owner": "zeedain14",
+
     "extra": {
       "eas": {
         "projectId": "b6b2547d-284d-4bc3-9237-fa1eeee0d4e5"
@@ -55,5 +66,3 @@
     }
   }
 }
- 
- 
