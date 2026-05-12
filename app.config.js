@@ -1,6 +1,6 @@
-const appJson = require('./app.json');
+require('dotenv').config();
 
-const env = process.env;
+const appJson = require('./app.json');
 
 module.exports = {
   expo: {
@@ -14,16 +14,49 @@ module.exports = {
       },
 
       firebase: {
-        apiKey: env.EXPO_PUBLIC_FIREBASE_API_KEY,
-        authDomain: env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+
+        // IMPORTANT:
+        // Use the exact bucket from Firebase Console
+        storageBucket:
+          process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+
         messagingSenderId:
-          env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: env.EXPO_PUBLIC_FIREBASE_APP_ID,
+          process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+
+        appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
       },
 
-      backendUrl: env.EXPO_PUBLIC_BACKEND_URL,
+      backendUrl: process.env.EXPO_PUBLIC_BACKEND_URL || '',
+    },
+
+    android: {
+      ...appJson.expo.android,
+
+      package: 'com.zeedain14.footballcoachmobile',
+
+      versionCode: 1,
+
+      adaptiveIcon: {
+        foregroundImage:
+          './assets/images/android-icon-foreground.png',
+
+        backgroundColor: '#0d1b2a',
+      },
+
+      permissions: [
+        'INTERNET',
+        'ACCESS_NETWORK_STATE',
+      ],
+    },
+
+    ios: {
+      ...appJson.expo.ios,
+
+      bundleIdentifier:
+        'com.zeedain14.footballcoachmobile',
     },
   },
 };
