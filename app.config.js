@@ -1,9 +1,22 @@
-// REMOVE this line at the top:
-// require('dotenv').config();  // ❌ Delete this
+const appJson = require('./app.json');
 
-const appJson = require('./app.json');
-// ... rest stays the same
-const appJson = require('./app.json');
+// Optional: Validate required env vars at config time (helps catch issues early)
+const requiredFirebaseVars = [
+  'EXPO_PUBLIC_FIREBASE_API_KEY',
+  'EXPO_PUBLIC_FIREBASE_PROJECT_ID',
+  'EXPO_PUBLIC_FIREBASE_APP_ID',
+];
+
+const missingVars = requiredFirebaseVars.filter(
+  (key) => !process.env[key]
+);
+
+if (missingVars.length > 0 && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    `⚠️  Missing Firebase env vars: ${missingVars.join(', ')}. 
+    Check your .env file or GitHub Secrets.`
+  );
+}
 
 module.exports = {
   expo: {
