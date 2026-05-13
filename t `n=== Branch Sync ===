@@ -1,0 +1,3 @@
+[33mfe1ad68[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m fix: Firebase initialization with error handling and config validation
+[33m9da999b[m[33m ([m[1;31morigin/main[m[33m)[m fix: Firebase initialization with proper error handling
+[33m30c3a90[m fix: firebase initialization and config exports
