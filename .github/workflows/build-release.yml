@@ -1,46 +1,41 @@
 name: Build Release APK
-
 on:
   push:
     branches: [main, master]
   workflow_dispatch:
-
 jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-        env:
-          EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
-          EXPO_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
-          EXPO_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
-          EXPO_PUBLIC_BACKEND_URL: ${{ secrets.BACKEND_URL }}
-          NODE_ENV: production
-
+      - name: Set up environment
+        run: |
+          echo "EXPO_PUBLIC_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}" >> .env
+          echo "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}" >> .env
+          echo "EXPO_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env
+          echo "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}" >> .env
+          echo "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" >> .env
+          echo "EXPO_PUBLIC_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }}" >> .env
+          echo "EXPO_PUBLIC_BACKEND_URL=${{ secrets.BACKEND_URL }}" >> .env
+      - name: Decode Keystore
+        run: |
+          printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/football-coach-release.keystore
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -50,84 +45,21 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-
-      # ✅ Prebuild FIRST to generate android folder
-      - name: Prebuild Expo Config
-        run: npx expo prebuild --platform android --clean
-        env:
-          EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
-          EXPO_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
-          EXPO_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
-          EXPO_PUBLIC_BACKEND_URL: ${{ secrets.BACKEND_URL }}
-          NODE_ENV: production
-
-      # ✅ Decode keystore with DEBUG output
-      - name: Decode Keystore
-        run: |
-          echo "🔐 Decoding keystore..."
-          mkdir -p android/app
-          
-          # Decode keystore
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/football-coach-release.keystore
-          chmod 600 android/app/football-coach-release.keystore
-          
-          # Verify it exists and is valid
-          echo "📁 Checking android/app directory:"
-          ls -la android/app/
-          
-          echo "🔑 Testing keystore:"
-          keytool -list -keystore android/app/football-coach-release.keystore \
-            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-            -alias "${{ secrets.KEY_ALIAS }}" || echo "⚠️ Keystore test failed"
-        shell: bash
-
-      # ✅ Build with correct path and extra debugging
       - name: Build Release APK
         run: |
           cd android
-          
-          # Show what we're using
-          echo "📦 Workspace: ${{ github.workspace }}"
-          echo "🔑 Keystore path: ${{ github.workspace }}/android/app/football-coach-release.keystore"
-          ls -la app/
-          
           chmod +x gradlew
-          ./gradlew clean assembleRelease \
-            --no-daemon \
-            --max-workers 2 \
-            -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease \
-            -Pandroid.injected.signing.store.file=${{ github.workspace }}/android/app/football-coach-release.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
-            --stacktrace
+          ./gradlew assembleRelease --max-workers 2 \
+            -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease \
+            -x lintVitalReportRelease -x lintDebug -x lintRelease
         env:
-          EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
-          EXPO_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
-          EXPO_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
-          EXPO_PUBLIC_BACKEND_URL: ${{ secrets.BACKEND_URL }}
-          NODE_ENV: production
-
-      - name: Upload APK Artifact
-        if: success()
+          KEYSTORE_PATH: ${{ github.workspace }}/android/app/football-coach-release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 7
-
-      - name: Upload Build Logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: |
-            android/app/build/reports/
-            android/build/reports/
-            android/app/build/outputs/logs/
