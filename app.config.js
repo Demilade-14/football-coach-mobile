@@ -1,5 +1,8 @@
-require('dotenv').config();
+// REMOVE this line at the top:
+// require('dotenv').config();  // ❌ Delete this
 
+const appJson = require('./app.json');
+// ... rest stays the same
 const appJson = require('./app.json');
 
 module.exports = {
