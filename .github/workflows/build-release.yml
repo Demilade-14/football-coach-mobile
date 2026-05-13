@@ -14,7 +14,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -33,18 +32,10 @@ jobs:
           echo "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" >> .env
           echo "EXPO_PUBLIC_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }}" >> .env
           echo "EXPO_PUBLIC_BACKEND_URL=${{ secrets.BACKEND_URL }}" >> .env
+          cat .env
       - name: Decode Keystore
         run: |
           printf "%s" "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/football-coach-release.keystore
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
       - name: Build Release APK
         run: |
           cd android
