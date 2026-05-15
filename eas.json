@@ -3,77 +3,41 @@
     "version": ">= 16.28.0",
     "appVersionSource": "remote"
   },
-
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
       },
-
       "env": {
-        "NPM_FLAGS": "--legacy-peer-deps",
-
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "YOUR_API_KEY",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "football-coach-mobile.firebaseapp.com",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "football-coach-mobile",
-
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "football-coach-mobile.firebasestorage.app",
-
-        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "797090821026",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:797090821026:android:3d0520c60654124b8cf8fb"
+        "NPM_FLAGS": "--legacy-peer-deps"
+        
       }
     },
-
     "preview": {
       "distribution": "internal",
-
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
       },
-
       "env": {
-        "NPM_FLAGS": "--legacy-peer-deps",
-
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "YOUR_API_KEY",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "football-coach-mobile.firebaseapp.com",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "football-coach-mobile",
-
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "football-coach-mobile.firebasestorage.app",
-
-        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "797090821026",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:797090821026:android:3d0520c60654124b8cf8fb"
+        "NPM_FLAGS": "--legacy-peer-deps"
       }
     },
-
     "production": {
       "distribution": "store",
       "autoIncrement": true,
-
       "android": {
         "buildType": "app-bundle",
         "gradleCommand": ":app:bundleRelease"
       },
-
       "env": {
-        "NPM_FLAGS": "--legacy-peer-deps",
-
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "YOUR_API_KEY",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "football-coach-mobile.firebaseapp.com",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "football-coach-mobile",
-
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "football-coach-mobile.firebasestorage.app",
-
-        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "797090821026",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:797090821026:android:3d0520c60654124b8cf8fb"
+        "NPM_FLAGS": "--legacy-peer-deps"
       }
     }
   },
-
   "submit": {
     "production": {
       "android": {

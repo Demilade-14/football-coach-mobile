@@ -1,3 +1,7 @@
+// At the TOP of app.config.js, before any other code:
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: '.env' });
+}
 const appJson = require('./app.json');
 
 // Optional: Validate required env vars at config time
