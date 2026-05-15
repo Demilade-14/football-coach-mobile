@@ -10,3 +10,9 @@ android/.gradle
 # Environment files - NEVER commit
 .env
 *.env.local
+
+# Duplicate backend folder - use separate repo
+backend/
+
+# Duplicate backend - use separate football-coach-backend folder
+backend/
