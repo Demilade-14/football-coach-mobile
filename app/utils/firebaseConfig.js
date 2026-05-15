@@ -1,67 +1,55 @@
-﻿import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-
-// Initialize these as null - they'll be set during initialization
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 let auth = null;
 let db = null;
 let isFirebaseInitialized = false;
 let firebaseInitError = null;
-
-/**
- * Get Firebase configuration from Expo config
- * @returns {Object} Firebase config object
- * @throws {Error} If required config values are missing
- */
-function getFirebaseConfig() {
-  const extra = Constants.expoConfig?.extra || {};
-  const config = {
-    apiKey: extra.firebase?.apiKey,
-    authDomain: extra.firebase?.authDomain,
-    projectId: extra.firebase?.projectId,
-    storageBucket: extra.firebase?.storageBucket,
-    messagingSenderId: extra.firebase?.messagingSenderId,
-    appId: extra.firebase?.appId,
+try {
+  const firebaseConfig = {
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
   };
-  
-  // Check for missing values
-  const missing = Object.entries(config)
+  if (__DEV__) {
+    console.log("?? Firebase config check:", {
+      apiKey: firebaseConfig.apiKey ? "? SET" : "? MISSING",
+      projectId: firebaseConfig.projectId || "? MISSING",
+      appId: firebaseConfig.appId || "? MISSING",
+    });
+  }
+  const missing = Object.entries(firebaseConfig)
     .filter(([, value]) => !value)
     .map(([key]) => key);
-    
   if (missing.length > 0) {
-    throw new Error(`Missing Firebase config: ${missing.join(', ')}`);
+    throw new Error(`Missing Firebase config: ${missing.join(", ")}. 
+Check your .env file and GitHub Secrets. 
+Required: EXPO_PUBLIC_FIREBASE_API_KEY, PROJECT_ID, APP_ID`);
   }
-  
-  return config;
-}
-
-/**
- * Initialize Firebase safely
- */
-try {
-  const firebaseConfig = getFirebaseConfig();
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  
-  // Initialize Auth with React Native persistence
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage),
   });
-  
-  // Initialize Firestore
   db = getFirestore(app);
-  
   isFirebaseInitialized = true;
-  console.log('✅ Firebase initialized successfully');
-  console.log('🔥 Project ID:', firebaseConfig.projectId);
-  
+  if (__DEV__) {
+    console.log("? Firebase initialized successfully:", {
+      projectId: firebaseConfig.projectId,
+      auth: !!auth,
+      db: !!db,
+    });
+  }
 } catch (error) {
   firebaseInitError = error;
-  console.error('❌ Firebase initialization error:', error.message);
-  console.error('📋 Check your .env file and app.config.js');
+  isFirebaseInitialized = false;
+  console.error("? Firebase initialization error:", {
+    message: error.message,
+    name: error.name,
+    stack: __DEV__ ? error.stack : undefined,
+  });
 }
-
-// Export all necessary items
 export { auth, db, isFirebaseInitialized, firebaseInitError };
