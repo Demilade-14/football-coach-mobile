@@ -7,3 +7,6 @@ android/.gradle
 .env
 *.keystore
 *.jks
+# Environment files - NEVER commit
+.env
+*.env.local
