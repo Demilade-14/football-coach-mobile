@@ -172,3 +172,10 @@ export const getMaxStatByAge = (age) => {
   if (age <= 37) return 85;
   return 75;
 };
+export const calculateOverall = (stats) => {
+  if (!stats || typeof stats !== "object") return 50;
+  const values = Object.values(stats).filter(v => typeof v === "number");
+  if (values.length === 0) return 50;
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  return Math.round(Math.min(99, Math.max(1, avg)));
+};
