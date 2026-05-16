@@ -1,7 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Text } from 'react-native';
 export default function RootLayout() {
   return (
     <>
@@ -20,10 +20,8 @@ export default function RootLayout() {
         <Stack.Screen 
           name="index" 
           options={{ 
-            title: '⚽ Football Coach',
-            headerLeft: () => (
-              <MaterialIcons name="sports-soccer" size={24} color="#ffd700" style={{ marginLeft: 15 }} />
-            ),
+            title: 'Football Coach',
+            headerLeft: () => <Text style={{ marginLeft: 15, fontSize: 20 }}>?</Text>,
           }} 
         />
         <Stack.Screen name="AuthScreen" options={{ title: 'Authentication', headerShown: false }} />
