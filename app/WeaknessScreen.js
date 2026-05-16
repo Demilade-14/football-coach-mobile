@@ -1,4 +1,4 @@
-// app/WeaknessScreen.js
+﻿// app/WeaknessScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';

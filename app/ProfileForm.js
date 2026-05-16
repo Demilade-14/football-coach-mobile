@@ -1,4 +1,4 @@
-// app/ProfileForm.js
+﻿// app/ProfileForm.js
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View, TouchableOpacity, Alert, Image, Modal, FlatList, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';

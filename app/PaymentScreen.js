@@ -1,4 +1,4 @@
-// app/PaymentScreen.js
+ï»¿// app/PaymentScreen.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -56,9 +56,9 @@ const PaymentScreen = () => {
 
         <View style={styles.securityInfo}>
           <Text style={styles.securityTitle}>?? Secure Payment</Text>
-          <Text style={styles.securityText}>• All transactions are encrypted</Text>
-          <Text style={styles.securityText}>• No card details stored on our servers</Text>
-          <Text style={styles.securityText}>• Cancel anytime from Settings</Text>
+          <Text style={styles.securityText}>â€¢ All transactions are encrypted</Text>
+          <Text style={styles.securityText}>â€¢ No card details stored on our servers</Text>
+          <Text style={styles.securityText}>â€¢ Cancel anytime from Settings</Text>
         </View>
 
         {loading ? (

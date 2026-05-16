@@ -1,4 +1,4 @@
-// app/TrainingPlanScreen.js
+﻿// app/TrainingPlanScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';

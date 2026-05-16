@@ -1,4 +1,4 @@
-// app/VIPChat.js - Real AI Coach powered by Claude API
+ï»¿// app/VIPChat.js - Real AI Coach powered by Claude API
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
@@ -27,7 +27,7 @@ Your personality:
 - Warm, encouraging, and deeply knowledgeable
 - You speak with authority but never arrogance
 - You use football terminology correctly and naturally
-- You're empathetic — acknowledge feelings FIRST before giving advice
+- You're empathetic â€” acknowledge feelings FIRST before giving advice
 - You celebrate wins (big and small) enthusiastically
 - You use emojis naturally but not excessively (max 2-3 per message)
 - You ask smart follow-up questions for personalized advice
@@ -35,7 +35,7 @@ Your personality:
 Your expertise covers:
 - Technical: passing, shooting, dribbling, first touch, crossing, heading, set pieces, weak foot
 - Tactical: formations, positioning, pressing, transitions, game reading, off-the-ball movement
-- Positions: GK, CB, FB, CDM, CM, CAM, winger, striker — deep specific knowledge of each
+- Positions: GK, CB, FB, CDM, CM, CAM, winger, striker â€” deep specific knowledge of each
 - Physical: fitness, agility, speed, strength, injury prevention, recovery, stretching
 - Mental: confidence, focus, game nerves, leadership, resilience, visualization, pre-match routines
 - Nutrition and recovery science specifically for footballers
@@ -45,7 +45,7 @@ Your expertise covers:
 - Video analysis and what to watch in professional games to learn
 
 Rules:
-- ALWAYS give specific, actionable advice — never vague or generic tips
+- ALWAYS give specific, actionable advice â€” never vague or generic tips
 - For skill questions: provide a concrete drill with reps/sets/duration
 - For mental questions: give specific psychological techniques with steps
 - Keep responses focused and under 200 words unless a detailed breakdown is truly needed
@@ -247,7 +247,7 @@ export default function VIPChat() {
   const sendWelcomeMessage = () => {
     const welcome = {
       id: 'welcome',
-      text: `Hey ${userName}! ?? I'm Coach AI — your personal football coach.\n\nI can help you with:\n• Skill drills & technique\n• Tactics & positioning\n• Mental game & confidence\n• Fitness & recovery\n• Getting scouted\n\nTap a quick start below or ask me anything!`,
+      text: `Hey ${userName}! ?? I'm Coach AI â€” your personal football coach.\n\nI can help you with:\nâ€¢ Skill drills & technique\nâ€¢ Tactics & positioning\nâ€¢ Mental game & confidence\nâ€¢ Fitness & recovery\nâ€¢ Getting scouted\n\nTap a quick start below or ask me anything!`,
       sender: 'Coach',
       timestamp: new Date().toISOString(),
     };
@@ -395,7 +395,7 @@ export default function VIPChat() {
           </View>
           <View>
             <Text style={styles.headerTitle}>Coach AI</Text>
-            <Text style={styles.headerSub}>? Premium · Always Available</Text>
+            <Text style={styles.headerSub}>? Premium Â· Always Available</Text>
           </View>
         </View>
 
@@ -470,7 +470,7 @@ export default function VIPChat() {
           </TouchableOpacity>
         </View>
         <Text style={styles.sessionInfo}>
-          ?? Claude AI · {sessionCount} exchange{sessionCount !== 1 ? 's' : ''} this session
+          ?? Claude AI Â· {sessionCount} exchange{sessionCount !== 1 ? 's' : ''} this session
         </Text>
       </View>
     </KeyboardAvoidingView>

@@ -1,4 +1,4 @@
-// app/VIPSubscription.js
+﻿// app/VIPSubscription.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';

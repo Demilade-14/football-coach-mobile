@@ -1,120 +1,80 @@
-export class AICoachSystem {
-  static generateRealTimeFeedback(playerStats, currentActivity) {
-    const feedback = [];
-    
-    // Analyze current performance
-    if (currentActivity === 'dribbling' && playerStats.dribbling < 70) {
-      feedback.push({
-        type: 'technique',
-        message: 'Keep the ball closer to your feet. Small touches help maintain control.',
-        priority: 'high'
-      });
+﻿// src/utils/AiCoachSystem.js
+// AI Coach functionality
+export const AICoachSystem = {
+  initialized: false,
+  playerData: null,
+  // ✅ Initialize the AI coach with player data
+  initialize: (playerData) => {
+    console.log("🤖 AICoachSystem initialized", playerData?.name || 'Unknown');
+    AICoachSystem.playerData = playerData;
+    AICoachSystem.initialized = true;
+    return true;
+  },
+  // ✅ Get personalized training advice
+  getAdvice: (stats) => {
+    if (!stats) return "Complete your profile to get personalized advice!";
+    const advice = [];
+    if (stats.pace < 60) advice.push("🏃 Work on sprint drills to improve your pace");
+    if (stats.shooting < 60) advice.push("⚽ Practice finishing drills in the box");
+    if (stats.passing < 60) advice.push("🎯 Focus on short passing accuracy");
+    if (stats.defending < 60) advice.push("🛡️ Study positioning and tackling techniques");
+    if (stats.physical < 60) advice.push("💪 Add strength training to your routine");
+    if (stats.dribbling < 60) advice.push("⚡ Practice cone dribbling exercises");
+    if (advice.length === 0) {
+      return "🎉 Great stats! Keep maintaining your skills with regular practice.";
     }
-    
-    if (currentActivity === 'shooting' && playerStats.finishing < 65) {
-      feedback.push({
-        type: 'technique',
-        message: 'Focus on your follow-through. Keep your head up and pick your spot.',
-        priority: 'medium'
-      });
-    }
-    
-    if (currentActivity === 'passing' && playerStats.shortPassing < 70) {
-      feedback.push({
-        type: 'technique',
-        message: 'Use the inside of your foot for better accuracy on short passes.',
-        priority: 'high'
-      });
-    }
-    
-    return feedback;
-  }
-
-  static generatePersonalizedTips(playerData) {
-    const tips = [];
-    const stats = playerData;
-    
-    // Find weakest areas
-    const skillAreas = {
-      pace: Math.round(((stats.acceleration || 0) + (stats.sprintSpeed || 0)) / 2),
-      shooting: Math.round(((stats.finishing || 0) + (stats.shotPower || 0) + (stats.longShots || 0)) / 3),
-      passing: Math.round(((stats.shortPassing || 0) + (stats.longPassing || 0) + (stats.vision || 0)) / 3),
-      dribbling: Math.round(((stats.dribbling || 0) + (stats.ballControl || 0) + (stats.agility || 0)) / 3),
-      defending: Math.round(((stats.interceptions || 0) + (stats.standingTackle || 0) + (stats.marking || 0)) / 3),
-      physical: Math.round(((stats.stamina || 0) + (stats.strength || 0) + (stats.jumping || 0)) / 3)
-    };
-    
-    const weakestSkill = Object.entries(skillAreas).reduce((a, b) => skillAreas[a[0]] < skillAreas[b[0]] ? a : b);
-    
-    switch (weakestSkill[0]) {
-      case 'pace':
-        tips.push({
-          category: 'Speed Training',
-          tip: 'Focus on sprint intervals: 30-second sprints with 90-second rest periods.',
-          exercises: ['Sprint intervals', 'Ladder drills', 'Plyometric jumps']
-        });
-        break;
-      case 'shooting':
-        tips.push({
-          category: 'Finishing',
-          tip: 'Practice shooting from different angles. Aim for corners consistently.',
-          exercises: ['Target practice', 'One-touch finishing', 'Weak foot shooting']
-        });
-        break;
-      case 'passing':
-        tips.push({
-          category: 'Passing Accuracy',
-          tip: 'Work on your first touch and vision. Practice passing under pressure.',
-          exercises: ['Wall passes', 'Triangle passing', 'Long ball practice']
-        });
-        break;
-      case 'dribbling':
-        tips.push({
-          category: 'Ball Control',
-          tip: 'Practice cone weaving and close ball control in tight spaces.',
-          exercises: ['Cone dribbling', 'Juggling', '1v1 situations']
-        });
-        break;
-      case 'defending':
-        tips.push({
-          category: 'Defensive Skills',
-          tip: 'Focus on positioning and timing your tackles. Stay patient.',
-          exercises: ['Tackling drills', 'Positioning practice', 'Interception training']
-        });
-        break;
-      case 'physical':
-        tips.push({
-          category: 'Physical Conditioning',
-          tip: 'Build your stamina with cardio and strength training.',
-          exercises: ['Circuit training', 'Weight lifting', 'Endurance runs']
-        });
-        break;
-    }
-    
-    return tips;
-  }
-
-  static analyzeVideoFeedback(videoData) {
-    // Simulated AI video analysis
-    return {
-      overallScore: Math.floor(Math.random() * 30) + 70,
-      strengths: [
-        'Good ball control in tight spaces',
-        'Consistent first touch',
-        'Quick decision making'
+    return advice.slice(0, 3).join("\n\n");
+  },
+  // ✅ Analyze performance and return score + feedback
+  analyzePerformance: (data) => {
+    const { goals = 0, assists = 0, tackles = 0, saves = 0, matches = 1 } = data || {};
+    const avgGoals = goals / matches;
+    const avgAssists = assists / matches;
+    const avgTackles = tackles / matches;
+    let score = 50;
+    let feedback = "Keep training consistently!";
+    if (avgGoals > 0.5) score += 15;
+    if (avgAssists > 0.3) score += 10;
+    if (avgTackles > 2) score += 10;
+    if (matches >= 5) score += 5;
+    score = Math.min(100, Math.max(0, score));
+    if (score >= 90) feedback = "🏆 Elite performance! You're ready for the next level.";
+    else if (score >= 75) feedback = "⭐ Excellent progress! Keep pushing forward.";
+    else if (score >= 60) feedback = "👍 Good effort! Focus on your weak areas.";
+    else if (score >= 40) feedback = "📈 Room for improvement. Try the recommended drills.";
+    else feedback = "💪 Don't give up! Every pro started somewhere.";
+    return { score, feedback, breakdown: { goals: avgGoals, assists: avgAssists, tackles: avgTackles } };
+  },
+  // ✅ Generate weekly training plan
+  generateTrainingPlan: (position, weakAreas = []) => {
+    const plans = {
+      Forward: [
+        "Monday: Finishing drills (30 min)",
+        "Wednesday: Sprint intervals (20 min)",
+        "Friday: 1v1 attacking scenarios (25 min)",
+        "Weekend: Match simulation"
       ],
-      improvements: [
-        'Work on weak foot accuracy',
-        'Improve shooting technique',
-        'Better positioning off the ball'
+      Midfielder: [
+        "Monday: Passing accuracy drills (30 min)",
+        "Wednesday: Vision & awareness exercises (25 min)",
+        "Friday: Endurance running (30 min)",
+        "Weekend: Small-sided games"
       ],
-      keyMoments: [
-        { time: '0:45', note: 'Excellent dribble past defender' },
-        { time: '1:23', note: 'Missed opportunity - should have passed' },
-        { time: '2:10', note: 'Great defensive positioning' }
+      Defender: [
+        "Monday: Tackling technique (30 min)",
+        "Wednesday: Positioning drills (25 min)",
+        "Friday: Aerial duels practice (20 min)",
+        "Weekend: Defensive shape exercises"
+      ],
+      Default: [
+        "Monday: Technical skills (30 min)",
+        "Wednesday: Physical conditioning (25 min)",
+        "Friday: Tactical awareness (20 min)",
+        "Weekend: Rest or light activity"
       ]
     };
-  }
-}
+    return plans[position] || plans.Default;
   }
 };
+// ✅ Helper: Check if coach is ready
+export const isCoachReady = () => AICoachSystem.initialized && AICoachSystem.playerData !== null;

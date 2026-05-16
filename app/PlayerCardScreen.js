@@ -1,4 +1,4 @@
-// app/PlayerCardScreen.js
+﻿// app/PlayerCardScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Share } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';

@@ -1,4 +1,4 @@
-// app/PositionQuiz.js
+﻿// app/PositionQuiz.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -159,7 +159,7 @@ const PositionQuiz = () => {
           return `${emoji} ${name} (${score} pts)`;
         });
 
-        while (results.length < 3) results.push('�');
+        while (results.length < 3) results.push('—');
 
         Alert.alert(
           '?? Your Ideal Positions!',

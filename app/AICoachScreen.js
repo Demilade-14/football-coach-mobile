@@ -1,4 +1,4 @@
-// app/AICoachScreen.js
+ï»¿// app/AICoachScreen.js
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
@@ -161,7 +161,7 @@ const AICoachScreen = () => {
     const translatedTips = selected.map((q, i) => ({
       id: `quote-${i}-${Date.now()}-${Math.random()}`,
       category: `${q.isCustom ? '??' : getCategoryIcon(q.category)} ${getCategoryLabel(q.category)}`,
-      tip: `"${translateQuote(q.quote, selectedLanguage)}"\n\n— ${q.player}`,
+      tip: `"${translateQuote(q.quote, selectedLanguage)}"\n\nâ€” ${q.player}`,
       exercises: []
     }));
     
@@ -362,7 +362,7 @@ const AICoachScreen = () => {
               {tip.exercises?.length > 0 && (
                 <View style={styles.exercises}>
                   {tip.exercises.map((ex, eidx) => (
-                    <Text key={eidx} style={styles.exercise}>• {ex}</Text>
+                    <Text key={eidx} style={styles.exercise}>â€¢ {ex}</Text>
                   ))}
                 </View>
               )}

@@ -1,4 +1,4 @@
-// app/AuthScreen.js
+﻿// app/AuthScreen.js
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView,

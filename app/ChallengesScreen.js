@@ -1,15 +1,15 @@
-// app/ChallengesScreen.js
+﻿// app/ChallengesScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CHALLENGES = [
-  { id: 1, title: 'Train 5 Days This Week', icon: '🔥', target: 5, type: 'sessions', reward: '50 XP' },
-  { id: 2, title: 'Complete 10 Hours Training', icon: '⏱️', target: 600, type: 'minutes', reward: '100 XP' },
-  { id: 3, title: 'Practice Weak Foot', icon: '⚽', target: 1, type: 'weakfoot', reward: '30 XP' },
-  { id: 4, title: 'Watch a Pro Match', icon: '📺', target: 1, type: 'watch', reward: '20 XP' },
-  { id: 5, title: 'Share Your Progress', icon: '📤', target: 1, type: 'share', reward: '25 XP' },
+  { id: 1, title: 'Train 5 Days This Week', icon: 'ðŸ”¥', target: 5, type: 'sessions', reward: '50 XP' },
+  { id: 2, title: 'Complete 10 Hours Training', icon: 'â±ï¸', target: 600, type: 'minutes', reward: '100 XP' },
+  { id: 3, title: 'Practice Weak Foot', icon: 'âš½', target: 1, type: 'weakfoot', reward: '30 XP' },
+  { id: 4, title: 'Watch a Pro Match', icon: 'ðŸ“º', target: 1, type: 'watch', reward: '20 XP' },
+  { id: 5, title: 'Share Your Progress', icon: 'ðŸ“¤', target: 1, type: 'share', reward: '25 XP' },
 ];
 
 export default function ChallengesScreen() {
@@ -85,9 +85,9 @@ export default function ChallengesScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={styles.backButton}>â† Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>🎯 Weekly Challenges</Text>
+        <Text style={styles.title}>ðŸŽ¯ Weekly Challenges</Text>
         <Text style={styles.subtitle}>Complete challenges to earn rewards</Text>
       </View>
 
@@ -125,7 +125,7 @@ export default function ChallengesScreen() {
                 )}
                 {isClaimed && (
                   <View style={styles.claimedBadge}>
-                    <Text style={styles.claimedText}>✓</Text>
+                    <Text style={styles.claimedText}>âœ“</Text>
                   </View>
                 )}
               </View>
@@ -136,7 +136,7 @@ export default function ChallengesScreen() {
 
       <View style={styles.infoBox}>
         <Text style={styles.infoText}>
-          💡 Challenges reset every Monday. Complete them before time runs out!
+          ðŸ’¡ Challenges reset every Monday. Complete them before time runs out!
         </Text>
       </View>
     </View>
