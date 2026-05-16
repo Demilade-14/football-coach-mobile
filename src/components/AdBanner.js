@@ -1,4 +1,4 @@
-﻿// app/components/AdBanner.js
+// app/components/AdBanner.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 // import { useVIPStatus } from '../utils/vipSystem'; // Uncomment when ready
@@ -11,7 +11,7 @@ const AdBanner = () => {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>📢 Ad Banner</Text>
+      <Text style={styles.text}>?? Ad Banner</Text>
       {/* Replace with actual Google Mobile Ads component */}
     </View>
   );

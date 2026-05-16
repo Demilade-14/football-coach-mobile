@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, ScrollView, Share } from 'react-native';
-// ️ Note: Change to './utils/playerDatabase' if your file is named that instead
+// ? Note: Change to './utils/playerDatabase' if your file is named that instead
 import { getAllPlayers, updatePlayer } from '../utils/playerDatabase';
 
 const PlayerCard = () => {
@@ -53,7 +53,7 @@ const PlayerCard = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>⚽ Player Cards</Text>
+      <Text style={styles.title}>? Player Cards</Text>
       
       {players.length === 0 ? (
         <Text style={styles.emptyText}>No players found. Create one in the Profile screen.</Text>
