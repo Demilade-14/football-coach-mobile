@@ -1,113 +1,42 @@
-﻿// app/AICoachScreen.js
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  ActivityIndicator, Alert, Modal, TextInput 
+  Alert, Modal, TextInput 
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AICoachSystem } from '../src/utils/AiCoachSystem';
+import { MOTIVATIONAL_QUOTES, TRANSLATIONS, containsProfanity } from '../src/utils/inspirations';
 import AdBanner from '../src/components/AdBanner';
-
-// Translation dictionary (simplified example)
-const t = {
-  dailyWisdom: 'Daily Wisdom',
-  inspirationFrom: 'Inspiration from athletes & leaders',
-  back: 'Back',
-  selectLanguage: 'Select Language',
-  cancel: 'Cancel',
-  addQuote: 'Add Your Quote',
-  yourName: 'Your Name',
-  yourQuote: 'Your Quote',
-  submit: 'Submit',
-  emptyFieldsError: 'Please fill in both fields',
-  profanityError: 'Please remove inappropriate language',
-  successMessage: 'Quote added successfully!',
-  consultingAI: 'Consulting AI Coach...',
-  errorTitle: 'Something went wrong',
-  tryAgain: 'Try Again',
-  noTipsYet: 'No tips yet',
-  createProfile: 'Create a player profile to get started',
-  createPlayer: 'Create Player',
-  refreshQuotes: 'Refresh Quotes',
-  football: 'Football',
-  basketball: 'Basketball',
-  tennis: 'Tennis',
-  boxing: 'Boxing',
-  athletics: 'Athletics',
-  gymnastics: 'Gymnastics',
-  coach: 'Coach',
-  business: 'Business',
-  entertainment: 'Entertainment',
-  leadership: 'Leadership',
-  wisdom: 'Wisdom',
-  motivation: 'Motivation',
-  productivity: 'Productivity',
-  customQuotes: 'Custom Quotes',
-};
-
-// Available languages
-const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '????' },
-  { code: 'es', name: 'Spanish', flag: '????' },
-  { code: 'fr', name: 'French', flag: '????' },
-  { code: 'de', name: 'German', flag: '????' },
-];
-
-// Category filter options
-const CATEGORIES = [
-  { key: 'all', label: 'All', icon: '??' },
-  { key: 'football', label: 'Football', icon: '?' },
-  { key: 'motivation', label: 'Motivation', icon: '??' },
-  { key: 'leadership', label: 'Leadership', icon: '??' },
-  { key: 'wisdom', label: 'Wisdom', icon: '??' },
-  { key: 'custom', label: 'Custom', icon: '??' },
-];
-
 const AICoachScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  
-  // State declarations
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [tips, setTips] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [filteredQuotes, setFilteredQuotes] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [showMotivational, setShowMotivational] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newQuoteName, setNewQuoteName] = useState('');
   const [newQuoteText, setNewQuoteText] = useState('');
   const [customQuotes, setCustomQuotes] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-
-  // Load data on mount
+  // Load custom quotes on mount
   useEffect(() => {
-    loadData();
     loadCustomQuotes();
   }, []);
-
-  // Load motivational quotes when category changes
+  // Load and filter quotes when category changes
   useEffect(() => {
-    if (showMotivational) {
-      loadMotivationalQuotes();
-    }
-  }, [selectedCategory, showMotivational]);
-
-  // Load custom quotes from AsyncStorage
+    loadQuotes();
+  }, [selectedCategory, customQuotes]);
   const loadCustomQuotes = async () => {
     try {
       const stored = await AsyncStorage.getItem('customQuotes');
       if (stored) {
-        setCustomQuotes(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setCustomQuotes(parsed);
       }
     } catch (err) {
       console.error('Failed to load custom quotes:', err);
     }
   };
-
-  // Save custom quotes to AsyncStorage
   const saveCustomQuotes = async (quotes) => {
     try {
       await AsyncStorage.setItem('customQuotes', JSON.stringify(quotes));
@@ -116,280 +45,236 @@ const AICoachScreen = () => {
       console.error('Failed to save custom quotes:', err);
     }
   };
-
-  // Main data loading function
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      // Initialize AICoachSystem if needed
-      await AICoachSystem.initialize();
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
-  // Load and filter motivational quotes
-  const loadMotivationalQuotes = () => {
-    let filtered = [];
-    
-    // Filter custom quotes by category
-    if (selectedCategory === 'all' || selectedCategory === 'custom') {
-      const customWithCategory = customQuotes.map(cq => ({
-        player: cq.name,
-        quote: cq.text,
-        category: 'custom',
-        isCustom: true
-      }));
-      filtered = [...filtered, ...customWithCategory];
-      console.log(`? Added ${customWithCategory.length} custom quotes`);
-    }
-    
-    // Add AI-generated quotes (example - replace with actual API call)
-    // const aiQuotes = await AICoachSystem.getMotivationalQuotes(selectedCategory);
-    // filtered = [...filtered, ...aiQuotes];
-    
-    // Shuffle and limit results
-    const shuffled = filtered.sort(() => Math.random() - 0.5);
-    const count = Math.min(5, shuffled.length);
-    const selected = shuffled.slice(0, count);
-    
-    console.log(`? Selected ${selected.length} quotes to display`);
-    
-    // Format quotes for display
-    const translatedTips = selected.map((q, i) => ({
-      id: `quote-${i}-${Date.now()}-${Math.random()}`,
-      category: `${q.isCustom ? '??' : getCategoryIcon(q.category)} ${getCategoryLabel(q.category)}`,
-      tip: `"${translateQuote(q.quote, selectedLanguage)}"\n\n— ${q.player}`,
-      exercises: []
+  const loadQuotes = () => {
+    let allQuotes = [];
+    // Add quotes from inspirations.js
+    const quotesFromLib = MOTIVATIONAL_QUOTES.map(q => ({
+      ...q,
+      isCustom: false
     }));
-    
-    setTips(translatedTips);
+    // Add custom quotes
+    const customWithCategory = customQuotes.map(cq => ({
+      player: cq.name,
+      quote: cq.text,
+      category: 'custom',
+      isCustom: true
+    }));
+    allQuotes = [...quotesFromLib, ...customWithCategory];
+    // Filter by category
+    let filtered = allQuotes;
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'custom') {
+        filtered = allQuotes.filter(q => q.isCustom);
+      } else {
+        filtered = allQuotes.filter(q => q.category === selectedCategory);
+      }
+    }
+    // Shuffle and limit to 10 quotes
+    const shuffled = filtered.sort(() => Math.random() - 0.5);
+    setFilteredQuotes(shuffled.slice(0, 10));
   };
-
-  // Helper: Get icon for category
-  const getCategoryIcon = (category) => {
-    const icons = {
-      football: '?', basketball: '??', tennis: '??',
-      boxing: '??', athletics: '??', gymnastics: '??',
-      coach: '??', business: '??', entertainment: '??',
-      leadership: '??', wisdom: '??', motivation: '??',
-      productivity: '?', custom: '??'
-    };
-    return icons[category] || '??';
+  const handleRefresh = () => {
+    loadQuotes();
+    Alert.alert('Refreshed', 'New quotes loaded!');
   };
-
-  // Helper: Get label for category
-  const getCategoryLabel = (category) => {
-    const labels = {
-      football: t.football, basketball: t.basketball, tennis: t.tennis,
-      boxing: t.boxing, athletics: t.athletics, gymnastics: t.gymnastics,
-      coach: t.coach, business: t.business, entertainment: t.entertainment,
-      leadership: t.leadership, wisdom: t.wisdom, motivation: t.motivation,
-      productivity: t.productivity, custom: t.customQuotes
-    };
-    return labels[category] || category;
-  };
-
-  // Helper: Simple quote translation (replace with real translation API)
-  const translateQuote = (quote, lang) => {
-    if (lang === 'en') return quote;
-    // Add real translation logic here
-    return `[${lang}] ${quote}`;
-  };
-
-  // Helper: Basic profanity filter (replace with robust solution)
-  const containsProfanity = (text) => {
-    const badWords = ['badword1', 'badword2']; // Replace with actual list
-    return badWords.some(word => text.toLowerCase().includes(word));
-  };
-
-  // Handle adding a new custom quote
   const handleAddQuote = () => {
     if (!newQuoteName.trim() || !newQuoteText.trim()) {
-      Alert.alert('Error', t.emptyFieldsError);
+      Alert.alert('Error', TRANSLATIONS[selectedLanguage].emptyFieldsError);
       return;
     }
-
     if (containsProfanity(newQuoteText) || containsProfanity(newQuoteName)) {
-      Alert.alert('Error', t.profanityError);
+      Alert.alert('Error', TRANSLATIONS[selectedLanguage].profanityError);
       return;
     }
-
     const newQuote = {
       id: Date.now().toString(),
       name: newQuoteName.trim(),
       text: newQuoteText.trim(),
       createdAt: new Date().toISOString()
     };
-
     const updatedQuotes = [...customQuotes, newQuote];
     saveCustomQuotes(updatedQuotes);
-    
     setNewQuoteName('');
     setNewQuoteText('');
     setShowAddModal(false);
-    
-    Alert.alert('Success', t.successMessage);
-    
-    if (showMotivational && selectedCategory === 'all') {
-      loadMotivationalQuotes();
-    }
+    Alert.alert('Success', TRANSLATIONS[selectedLanguage].successMessage);
   };
-
-  // Handle back navigation
-  const handleGoBack = () => {
-    try {
-      router.back();
-    } catch (error) {
-      console.log('?? Back not available, navigating to home');
-      router.replace('/');
-    }
+  const getCategoryIcon = (category) => {
+    const icons = {
+      football: '⚽', basketball: '🏀', tennis: '🎾',
+      boxing: '🥊', athletics: '🏃', gymnastics: '🤸',
+      coach: '👔', business: '💼', entertainment: '🎬',
+      leadership: '👑', wisdom: '📚', motivation: '🔥',
+      productivity: '⚡', custom: '📝'
+    };
+    return icons[category] || '💭';
   };
-
-  // Save language preference
-  const saveLanguage = async (code) => {
-    try {
-      await AsyncStorage.setItem('preferredLanguage', code);
-      setSelectedLanguage(code);
-    } catch (err) {
-      console.error('Failed to save language:', err);
-    }
+  const getCategoryLabel = (category) => {
+    const labels = {
+      football: TRANSLATIONS[selectedLanguage].football,
+      basketball: TRANSLATIONS[selectedLanguage].basketball,
+      tennis: TRANSLATIONS[selectedLanguage].tennis,
+      boxing: TRANSLATIONS[selectedLanguage].boxing,
+      athletics: TRANSLATIONS[selectedLanguage].athletics,
+      gymnastics: TRANSLATIONS[selectedLanguage].gymnastics,
+      coach: TRANSLATIONS[selectedLanguage].coach,
+      business: TRANSLATIONS[selectedLanguage].business,
+      entertainment: TRANSLATIONS[selectedLanguage].entertainment,
+      leadership: TRANSLATIONS[selectedLanguage].leadership,
+      wisdom: TRANSLATIONS[selectedLanguage].wisdom,
+      motivation: TRANSLATIONS[selectedLanguage].motivation,
+      productivity: TRANSLATIONS[selectedLanguage].productivity,
+      custom: TRANSLATIONS[selectedLanguage].customQuotes
+    };
+    return labels[category] || category;
   };
-
-  // Loading state
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#ffd700" />
-        <Text style={styles.loadingText}>{t.consultingAI}</Text>
-      </View>
-    );
-  }
-
-  // Error state
-  if (error && tips.length === 0) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.errorTitle}>{t.errorTitle}</Text>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadData}>
-          <Text style={styles.retryButtonText}>{t.tryAgain}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Text style={styles.backButtonText}>{t.back}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
+  const t = TRANSLATIONS[selectedLanguage];
   return (
-    // ? Wrap in flex container for banner at bottom
     <View style={{ flex: 1, backgroundColor: '#0d1b2a' }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Header with Back & Language */}
+        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={styles.backText}>? {t.back}</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backText}>⬅️ {t.back}</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity 
             style={styles.languageButton}
             onPress={() => setShowLanguagePicker(true)}
           >
             <Text style={styles.languageText}>
-              {LANGUAGES.find(l => l.code === selectedLanguage)?.flag} {selectedLanguage.toUpperCase()}
+              🌐 {selectedLanguage.toUpperCase()}
             </Text>
           </TouchableOpacity>
         </View>
-        
-        <Text style={styles.title}>?? {t.dailyWisdom}</Text>
+        <Text style={styles.title}>🌟 {t.dailyWisdom}</Text>
         <Text style={styles.subtitle}>{t.inspirationFrom}</Text>
-
-        {/* Category Filter Chips */}
+        {/* Category Filter */}
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
           style={styles.categoryScroll}
         >
-          {CATEGORIES.map(cat => (
-            <TouchableOpacity
-              key={cat.key}
-              style={[
-                styles.categoryChip,
-                selectedCategory === cat.key && styles.categoryChipActive
-              ]}
-              onPress={() => {
-                console.log('?? Category selected:', cat.key);
-                setSelectedCategory(cat.key);
-                if (showMotivational) {
-                  loadMotivationalQuotes();
-                }
-              }}
-            >
-              <Text style={[
-                styles.categoryChipText,
-                selectedCategory === cat.key && styles.categoryChipTextActive
-              ]}>
-                {cat.icon} {cat.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              selectedCategory === 'all' && styles.categoryChipActive
+            ]}
+            onPress={() => setSelectedCategory('all')}
+          >
+            <Text style={[
+              styles.categoryChipText,
+              selectedCategory === 'all' && styles.categoryChipTextActive
+            ]}>
+              📊 {t.all}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              selectedCategory === 'football' && styles.categoryChipActive
+            ]}
+            onPress={() => setSelectedCategory('football')}
+          >
+            <Text style={[
+              styles.categoryChipText,
+              selectedCategory === 'football' && styles.categoryChipTextActive
+            ]}>
+              ⚽ {t.football}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              selectedCategory === 'motivation' && styles.categoryChipActive
+            ]}
+            onPress={() => setSelectedCategory('motivation')}
+          >
+            <Text style={[
+              styles.categoryChipText,
+              selectedCategory === 'motivation' && styles.categoryChipTextActive
+            ]}>
+              🔥 {t.motivation}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              selectedCategory === 'leadership' && styles.categoryChipActive
+            ]}
+            onPress={() => setSelectedCategory('leadership')}
+          >
+            <Text style={[
+              styles.categoryChipText,
+              selectedCategory === 'leadership' && styles.categoryChipTextActive
+            ]}>
+              👑 {t.leadership}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              selectedCategory === 'wisdom' && styles.categoryChipActive
+            ]}
+            onPress={() => setSelectedCategory('wisdom')}
+          >
+            <Text style={[
+              styles.categoryChipText,
+              selectedCategory === 'wisdom' && styles.categoryChipTextActive
+            ]}>
+              📚 {t.wisdom}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              selectedCategory === 'custom' && styles.categoryChipActive
+            ]}
+            onPress={() => setSelectedCategory('custom')}
+          >
+            <Text style={[
+              styles.categoryChipText,
+              selectedCategory === 'custom' && styles.categoryChipTextActive
+            ]}>
+              📝 {t.customQuotes}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
-
         {/* Add Quote Button */}
         <TouchableOpacity 
           style={styles.addQuoteButton}
           onPress={() => setShowAddModal(true)}
         >
-          <Text style={styles.addQuoteButtonText}>?? {t.addQuote}</Text>
+          <Text style={styles.addQuoteButtonText}>➕ {t.addQuote}</Text>
         </TouchableOpacity>
-
-        {showMotivational && (
-          <View style={styles.motivationalHeader}>
-            <Text style={styles.motivationalTitle}>?? {t.dailyWisdom}</Text>
-            <Text style={styles.motivationalSubtitle}>{t.inspirationFrom}</Text>
-          </View>
-        )}
-
-        {/* Tips/Quotes Display */}
-        {tips.length > 0 ? (
-          tips.map((tip, idx) => (
-            <View key={tip.id || idx} style={styles.tipCard}>
-              <Text style={styles.tipCategory}>{tip.category}</Text>
-              <Text style={styles.tipMessage}>{tip.tip}</Text>
-              {tip.exercises?.length > 0 && (
-                <View style={styles.exercises}>
-                  {tip.exercises.map((ex, eidx) => (
-                    <Text key={eidx} style={styles.exercise}>• {ex}</Text>
-                  ))}
-                </View>
-              )}
+        {/* Refresh Button */}
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+        >
+          <Text style={styles.refreshButtonText}>🔄 {t.refreshQuotes}</Text>
+        </TouchableOpacity>
+        {/* Quotes Display */}
+        {filteredQuotes.length > 0 ? (
+          filteredQuotes.map((quote, index) => (
+            <View key={index} style={styles.quoteCard}>
+              <View style={styles.quoteHeader}>
+                <Text style={styles.quoteCategory}>
+                  {getCategoryIcon(quote.category)} {getCategoryLabel(quote.category)}
+                </Text>
+                {quote.isCustom && (
+                  <Text style={styles.customBadge}>Custom</Text>
+                )}
+              </View>
+              <Text style={styles.quoteText}>"{quote.quote}"</Text>
+              <Text style={styles.quoteAuthor}>— {quote.player}</Text>
             </View>
           ))
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>{t.noTipsYet}</Text>
-            <Text style={styles.emptySubtext}>{t.createProfile}</Text>
-            <TouchableOpacity 
-              style={styles.createButton}
-              onPress={() => router.push('/ProfileForm')}
-            >
-              <Text style={styles.createButtonText}>{t.createPlayer}</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptyText}>No quotes found</Text>
+            <Text style={styles.emptySubtext}>Try a different category or add your own!</Text>
           </View>
         )}
-
-        {showMotivational && (
-          <TouchableOpacity 
-            style={styles.refreshButton}
-            onPress={loadMotivationalQuotes}
-          >
-            <Text style={styles.refreshButtonText}>{t.refreshQuotes}</Text>
-          </TouchableOpacity>
-        )}
-
         {/* Language Picker Modal */}
         <Modal
           visible={showLanguagePicker}
@@ -400,23 +285,20 @@ const AICoachScreen = () => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{t.selectLanguage}</Text>
-              {LANGUAGES.map(lang => (
+              {['en', 'es', 'fr', 'de', 'pt', 'ar', 'zh', 'it'].map(lang => (
                 <TouchableOpacity
-                  key={lang.code}
+                  key={lang}
                   style={[
                     styles.languageItem,
-                    selectedLanguage === lang.code && styles.languageItemActive
+                    selectedLanguage === lang && styles.languageItemActive
                   ]}
                   onPress={() => {
-                    saveLanguage(lang.code);
+                    setSelectedLanguage(lang);
                     setShowLanguagePicker(false);
-                    if (showMotivational) loadMotivationalQuotes();
                   }}
                 >
-                  <Text style={styles.languageItemText}>
-                    {lang.flag} {lang.name}
-                  </Text>
-                  {selectedLanguage === lang.code && <Text style={styles.checkmark}>?</Text>}
+                  <Text style={styles.languageItemText}>{lang.toUpperCase()}</Text>
+                  {selectedLanguage === lang && <Text style={styles.checkmark}>✓</Text>}
                 </TouchableOpacity>
               ))}
               <TouchableOpacity 
@@ -428,7 +310,6 @@ const AICoachScreen = () => {
             </View>
           </View>
         </Modal>
-
         {/* Add Quote Modal */}
         <Modal
           visible={showAddModal}
@@ -439,7 +320,6 @@ const AICoachScreen = () => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{t.addQuote}</Text>
-              
               <Text style={styles.inputLabel}>{t.yourName}</Text>
               <TextInput
                 style={styles.input}
@@ -448,7 +328,6 @@ const AICoachScreen = () => {
                 placeholder="e.g., Your Name"
                 placeholderTextColor="#666"
               />
-              
               <Text style={styles.inputLabel}>{t.yourQuote}</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
@@ -459,7 +338,6 @@ const AICoachScreen = () => {
                 multiline
                 numberOfLines={4}
               />
-              
               <View style={styles.modalButtons}>
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.cancelButton]}
@@ -467,7 +345,6 @@ const AICoachScreen = () => {
                 >
                   <Text style={styles.cancelButtonText}>{t.cancel}</Text>
                 </TouchableOpacity>
-                
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.submitButton]}
                   onPress={handleAddQuote}
@@ -479,33 +356,22 @@ const AICoachScreen = () => {
           </View>
         </Modal>
       </ScrollView>
-
-      {/* ? Banner Ad - Sticks to bottom, hidden for VIP */}
+      {/* Ad Banner */}
       <AdBanner />
     </View>
   );
 };
-
 export default AICoachScreen;
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0d1b2a' },
+  container: { flex: 1 },
   content: { padding: 20 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#0d1b2a' },
-  loadingText: { color: '#a8dadc', marginTop: 16, fontSize: 16 },
-  errorTitle: { fontSize: 20, fontWeight: 'bold', color: '#FF6B6B', marginBottom: 12 },
-  errorText: { color: '#a8dadc', textAlign: 'center', marginBottom: 20, fontSize: 14 },
-  retryButton: { backgroundColor: '#1e88e5', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginBottom: 12 },
-  retryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  backButton: { paddingVertical: 10, paddingHorizontal: 20 },
-  backButtonText: { color: '#a8dadc', fontSize: 14 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   backBtn: { padding: 8 },
   backText: { color: '#1e88e5', fontSize: 16, fontWeight: 'bold' },
   languageButton: { backgroundColor: '#1b263b', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
   languageText: { color: '#ffd700', fontSize: 14, fontWeight: '600' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#ffd700', marginBottom: 4 },
-  subtitle: { fontSize: 16, color: '#a8dadc', marginBottom: 20 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#ffd700', marginBottom: 4, textAlign: 'center' },
+  subtitle: { fontSize: 16, color: '#a8dadc', marginBottom: 20, textAlign: 'center' },
   categoryScroll: { marginBottom: 16 },
   categoryChip: { 
     backgroundColor: '#1b263b', 
@@ -524,19 +390,17 @@ const styles = StyleSheet.create({
     padding: 14, 
     borderRadius: 10, 
     alignItems: 'center', 
-    marginBottom: 20 
+    marginBottom: 10 
   },
   addQuoteButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  motivationalHeader: { 
-    backgroundColor: '#1b263b', 
-    borderRadius: 12, 
-    padding: 15, 
-    marginBottom: 20, 
-    borderLeftWidth: 4, 
-    borderLeftColor: '#ffd700' 
+  refreshButton: { 
+    backgroundColor: '#6c5ce7', 
+    padding: 14, 
+    borderRadius: 10, 
+    alignItems: 'center', 
+    marginBottom: 20 
   },
-  motivationalTitle: { fontSize: 18, fontWeight: 'bold', color: '#ffd700', marginBottom: 4 },
-  motivationalSubtitle: { fontSize: 14, color: '#a8dadc' },
+  refreshButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   emptyState: { 
     alignItems: 'center', 
     padding: 30, 
@@ -545,10 +409,8 @@ const styles = StyleSheet.create({
     marginBottom: 20 
   },
   emptyText: { color: '#f1faee', fontSize: 16, marginBottom: 8, textAlign: 'center' },
-  emptySubtext: { color: '#a8dadc', fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  createButton: { backgroundColor: '#28a745', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
-  createButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  tipCard: { 
+  emptySubtext: { color: '#a8dadc', fontSize: 14, textAlign: 'center' },
+  quoteCard: { 
     backgroundColor: '#1b263b', 
     borderRadius: 12, 
     padding: 15, 
@@ -556,18 +418,19 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#ffd700'
   },
-  tipCategory: { fontSize: 14, fontWeight: 'bold', color: '#ffd700', marginBottom: 8 },
-  tipMessage: { fontSize: 15, color: '#f1faee', marginBottom: 8, lineHeight: 22, fontStyle: 'italic' },
-  exercises: { marginLeft: 10, marginTop: 8 },
-  exercise: { fontSize: 13, color: '#a8dadc', marginBottom: 4 },
-  refreshButton: { 
-    backgroundColor: '#6c5ce7', 
-    padding: 14, 
-    borderRadius: 10, 
-    alignItems: 'center', 
-    marginTop: 10 
+  quoteHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  quoteCategory: { fontSize: 14, fontWeight: 'bold', color: '#ffd700' },
+  customBadge: { 
+    backgroundColor: '#ffd700', 
+    color: '#0d1b2a', 
+    paddingHorizontal: 8, 
+    paddingVertical: 2, 
+    borderRadius: 4,
+    fontSize: 10,
+    fontWeight: 'bold'
   },
-  refreshButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  quoteText: { fontSize: 15, color: '#f1faee', marginBottom: 10, lineHeight: 22, fontStyle: 'italic' },
+  quoteAuthor: { fontSize: 14, color: '#a8dadc', textAlign: 'right', fontWeight: '600' },
   modalOverlay: { 
     flex: 1, 
     backgroundColor: 'rgba(0,0,0,0.7)', 

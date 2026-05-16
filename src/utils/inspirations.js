@@ -1,4 +1,4 @@
-﻿// app/utils/quotesDatabase.js
+﻿// app/utils/inspirations.js
 
 export const MOTIVATIONAL_QUOTES = [
   // âš½ FOOTBALLERS

@@ -1,242 +1,145 @@
-﻿// src/utils/playerDatabase.js
-// Complete player stats storage with age-based rating limits
-// In-memory player storage
+﻿// In-memory player storage
 const _players = [];
-export const playerDatabase = {
-  addPlayer: (player) => {
-    const newPlayer = {
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      ...player
-    };
-    _players.push(newPlayer);
-    return newPlayer;
-  },
-  getPlayer: (id) => _players.find(p => p.id === id),
-  updatePlayer: (id, updates) => {
-    const index = _players.findIndex(p => p.id === id);
-    if (index !== -1) {
-      _players[index] = { ..._players[index], ...updates };
-      return _players[index];
-    }
-    return null;
-  },
-  deletePlayer: (id) => {
-    const index = _players.findIndex(p => p.id === id);
-    if (index !== -1) {
-      return _players.splice(index, 1)[0];
-    }
-    return null;
+// FC 26 Accurate Overall Rating Calculation
+export const calculateOverall = (attrs, age = 15, position = 'ST') => {
+  if (!attrs) return 50;
+  // FC 26 uses weighted stats based on position
+  const positionWeights = {
+    'GK': { diving: 0.25, handling: 0.25, kicking: 0.15, positioning: 0.20, reflexes: 0.15 },
+    'CB': { defending: 0.35, physical: 0.25, pace: 0.15, passing: 0.15, shooting: 0.10 },
+    'LB': { defending: 0.30, pace: 0.25, physical: 0.15, passing: 0.20, shooting: 0.10 },
+    'RB': { defending: 0.30, pace: 0.25, physical: 0.15, passing: 0.20, shooting: 0.10 },
+    'CDM': { defending: 0.30, passing: 0.30, physical: 0.20, pace: 0.10, shooting: 0.10 },
+    'CM': { passing: 0.30, defending: 0.25, physical: 0.20, pace: 0.15, shooting: 0.10 },
+    'CAM': { passing: 0.35, shooting: 0.25, dribbling: 0.20, physical: 0.10, pace: 0.10 },
+    'LW': { pace: 0.30, dribbling: 0.25, shooting: 0.25, passing: 0.15, physical: 0.05 },
+    'RW': { pace: 0.30, dribbling: 0.25, shooting: 0.25, passing: 0.15, physical: 0.05 },
+    'LM': { pace: 0.25, passing: 0.25, dribbling: 0.20, defending: 0.15, physical: 0.15 },
+    'RM': { pace: 0.25, passing: 0.25, dribbling: 0.20, defending: 0.15, physical: 0.15 },
+    'ST': { shooting: 0.35, pace: 0.25, dribbling: 0.20, physical: 0.15, passing: 0.05 },
+    'CF': { shooting: 0.30, pace: 0.25, dribbling: 0.20, passing: 0.15, physical: 0.10 },
+  };
+  const weights = positionWeights[position] || positionWeights['ST'];
+  // Calculate category ratings (0-99 scale)
+  const pace = Math.min(99, Math.max(1, 
+    (attrs.acceleration + attrs.sprintSpeed) / 2
+  ));
+  const shooting = Math.min(99, Math.max(1,
+    (attrs.finishing + attrs.shotPower + attrs.longShots + attrs.volleys + attrs.penalties) / 5
+  ));
+  const passing = Math.min(99, Math.max(1,
+    (attrs.vision + attrs.crossing + attrs.shortPassing + attrs.longPassing + attrs.curve) / 5
+  ));
+  const dribbling = Math.min(99, Math.max(1,
+    (attrs.agility + attrs.balance + attrs.reactions + attrs.ballControl + attrs.dribbling + attrs.composure) / 6
+  ));
+  const defending = Math.min(99, Math.max(1,
+    (attrs.interceptions + attrs.headingAccuracy + attrs.marking + attrs.standingTackle + attrs.slidingTackle) / 5
+  ));
+  const physical = Math.min(99, Math.max(1,
+    (attrs.jumping + attrs.stamina + attrs.strength + attrs.aggression) / 4
+  ));
+  // Calculate overall based on position weights
+  let overall = 0;
+  if (position === 'GK') {
+    overall = (
+      attrs.diving * 0.25 +
+      attrs.handling * 0.25 +
+      attrs.kicking * 0.15 +
+      attrs.positioning * 0.20 +
+      attrs.reflexes * 0.15
+    );
+  } else {
+    overall = (
+      pace * (weights.pace || 0) +
+      shooting * (weights.shooting || 0) +
+      passing * (weights.passing || 0) +
+      dribbling * (weights.dribbling || 0) +
+      defending * (weights.defending || 0) +
+      physical * (weights.physical || 0)
+    );
   }
+  // Apply age modifier (FC 26 style)
+  let ageModifier = 1.0;
+  if (age < 18) ageModifier = 0.85 + (age - 14) * 0.025;
+  else if (age > 32) ageModifier = 1.0 - (age - 32) * 0.015;
+  overall = Math.round(overall * ageModifier);
+  return Math.min(99, Math.max(40, overall));
 };
-// ✅ EXPORT: Get all players
-export const getAllPlayers = () => [..._players];
-// ✅ EXPORT: Get top players by rating
-export const getTopPlayers = (limit = 10) => {
-  return [..._players]
-    .sort((a, b) => (b.overallRating || 0) - (a.overallRating || 0))
-    .slice(0, limit);
+// Get position based on stats (FC 26 logic)
+export const recommendPosition = (attrs, age = 15, preferredFoot = 'Right') => {
+  if (!attrs) return 'ST';
+  const pace = (attrs.acceleration + attrs.sprintSpeed) / 2;
+  const shooting = (attrs.finishing + attrs.shotPower) / 2;
+  const passing = (attrs.shortPassing + attrs.longPassing + attrs.vision) / 3;
+  const dribbling = (attrs.dribbling + attrs.ballControl + attrs.agility) / 3;
+  const defending = (attrs.marking + attrs.standingTackle + attrs.interceptions) / 3;
+  const physical = (attrs.strength + attrs.stamina + attrs.aggression) / 3;
+  // Goalkeeper check
+  if (attrs.diving > 70 && attrs.handling > 70 && attrs.reflexes > 70) {
+    return 'GK';
+  }
+  // Defender check
+  if (defending > 70 && physical > 65) {
+    if (pace > 75) return 'LB';
+    if (pace > 70) return 'CB';
+    return 'CB';
+  }
+  // Midfielder check
+  if (passing > 70 && defending > 60) {
+    if (pace > 75 && dribbling > 70) return 'CAM';
+    if (defending > 70) return 'CDM';
+    return 'CM';
+  }
+  // Attacker check
+  if (shooting > 70 || pace > 75) {
+    if (pace > 80 && dribbling > 75) return 'LW';
+    if (shooting > 75 && physical > 70) return 'ST';
+    if (pace > 75 && passing > 65) return 'RW';
+    return 'ST';
+  }
+  return 'CM';
 };
-// ✅ EXPORT: Get total player count
-export const getTotalPlayersCount = () => _players.length;
-// ✅ EXPORT: Check if user can save more players (free tier: 5 max)
-export const canSaveMorePlayers = (currentCount) => currentCount < 5;
-// ✅ EXPORT: Save player with validation
+// Get card type based on rating (FC 26 style)
+export const getCardType = (overall) => {
+  if (overall >= 90) return { type: 'TOTY', color: '#0066CC', glow: '#00CCFF' };
+  if (overall >= 87) return { type: 'TOTS', color: '#FF6600', glow: '#FF9900' };
+  if (overall >= 85) return { type: 'TOTW', color: '#CC9900', glow: '#FFCC00' };
+  if (overall >= 80) return { type: 'Gold Rare', color: '#D4AF37', glow: '#FFD700' };
+  if (overall >= 75) return { type: 'Gold', color: '#B8860B', glow: '#DAA520' };
+  if (overall >= 70) return { type: 'Silver Rare', color: '#C0C0C0', glow: '#E8E8E8' };
+  return { type: 'Bronze', color: '#CD7F32', glow: '#D2691E' };
+};
+// Save player
 export const savePlayer = async (playerData) => {
   try {
-    if (!playerData.name) {
-      return { success: false, error: 'Player name is required' };
+    if (!playerData.id) {
+      playerData.id = Date.now().toString();
     }
-    const saved = playerDatabase.addPlayer(playerData);
-    return { success: true, data: saved };
+    playerData.createdAt = new Date().toISOString();
+    _players.push(playerData);
+    return { success: true, data: playerData };
   } catch (error) {
     return { success: false, error: error.message };
   }
 };
-// ✅ EXPORT: Calculate overall rating from stats
-export const calculateOverall = (stats, age = 15, options = {}) => {
-  if (!stats || typeof stats !== 'object') return 50;
-  const values = Object.values(stats).filter(v => typeof v === 'number');
-  if (values.length === 0) return 50;
-  const avg = values.reduce((a, b) => a + b, 0) / values.length;
-  // Apply age-based modifier
-  const ageModifier = getAgeRatingModifier(age);
-  const finalRating = Math.round(avg * ageModifier);
-  return Math.min(99, Math.max(1, finalRating));
+// Get all players
+export const getAllPlayers = () => [..._players];
+// Get top players
+export const getTopPlayers = (limit = 10) => {
+  return [..._players]
+    .sort((a, b) => (b.overall || 0) - (a.overall || 0))
+    .slice(0, limit);
 };
-// ✅ EXPORT: Recommend position based on stats
-export const recommendPosition = (stats, age = 15, preferredFoot = 'Right') => {
-  if (!stats || typeof stats !== 'object') return 'Midfielder';
-  const { 
-    pace = 50, shooting = 50, passing = 50, 
-    defending = 50, physical = 50, dribbling = 50 
-  } = stats;
-  // Age affects position suitability
-  const maxRating = getMaxStatByAge(age, 'overall');
-  if (defending > 70 && physical > 65 && maxRating >= 70) return 'Defender';
-  if (pace > 75 && shooting > 70 && maxRating >= 70) return 'Forward';
-  if (passing > 70 && dribbling > 65 && maxRating >= 70) return 'Midfielder';
-  if (pace > 80 && maxRating >= 75) return 'Winger';
-  if (shooting > 75 && maxRating >= 75) return 'Striker';
-  return 'Midfielder';
-};
-// ✅ EXPORT: Get improvement tips based on position and stats
-export const getImprovementTips = (position, stats, options = {}) => {
-  if (!stats || typeof stats !== 'object') {
-    return ['Complete your profile to get personalized training tips!'];
+// Delete player
+export const deletePlayer = (id) => {
+  const index = _players.findIndex(p => p.id === id);
+  if (index !== -1) {
+    return _players.splice(index, 1)[0];
   }
-  const tips = [];
-  const { 
-    pace = 50, shooting = 50, passing = 50, 
-    defending = 50, physical = 50, dribbling = 50 
-  } = stats;
-  // Position-specific tips
-  if (position === 'Forward' || position === 'Striker') {
-    if (shooting < 65) tips.push('🎯 Practice finishing: shoot at different corners');
-    if (pace < 65) tips.push('⚡ Sprint intervals: 10x 30m sprints with 30s rest');
-    if (dribbling < 60) tips.push('⚽ Cone drills: weave through cones at speed');
-  } else if (position === 'Midfielder') {
-    if (passing < 65) tips.push('🎯 Wall passes: 50 passes each foot against wall');
-    if (dribbling < 60) tips.push('⚡ Close control: dribble in tight spaces');
-    if (physical < 60) tips.push('💪 Core strength: planks, Russian twists');
-  } else if (position === 'Defender') {
-    if (defending < 65) tips.push('🛡️ Positioning: watch pro defenders, study angles');
-    if (physical < 65) tips.push('💪 Leg strength: squats, lunges, calf raises');
-    if (pace < 60) tips.push('⚡ Recovery runs: practice backpedaling + sprinting');
-  } else if (position === 'Goalkeeper') {
-    if (reflexes < 65) tips.push('🧤 Reaction drills: tennis ball catches');
-    if (handling < 65) tips.push('🧤 Catching practice: various ball trajectories');
-    if (positioning < 60) tips.push('🧤 Angle work: practice cutting down shooter angles');
-  }
-  // General tips for low stats
-  if (pace < 55 && !tips.some(t => t.includes('sprint'))) {
-    tips.push('🏃 General fitness: include sprint work in training');
-  }
-  if (shooting < 55 && !tips.some(t => t.includes('finishing'))) {
-    tips.push('⚽ Shooting practice: 15 mins daily, both feet');
-  }
-  if (passing < 55 && !tips.some(t => t.includes('pass'))) {
-    tips.push('🎯 Passing drills: short/long passes with partner');
-  }
-  // If no specific tips, provide encouragement
-  if (tips.length === 0) {
-    tips.push('🌟 Great foundation! Keep training consistently');
-    tips.push('📊 Track progress: update stats after each session');
-    tips.push('🎮 Watch matches: learn positioning from pros');
-  }
-  return tips.slice(0, 5); // Return max 5 tips
+  return null;
 };
-// ✅ EXPORT: Get MAX stat value based on age (CRITICAL for age limits)
-export const getMaxStatByAge = (age, statName = 'overall') => {
-  // Ensure age is valid
-  const validAge = Math.max(4, Math.min(56, age || 15));
-  // Different stats have different peak values
-  const statPeaks = {
-    pace: 95,
-    shooting: 92,
-    passing: 94,
-    defending: 93,
-    physical: 90,
-    dribbling: 94,
-    reflexes: 93,
-    handling: 91,
-    positioning: 94,
-    overall: 99
-  };
-  const peakValue = statPeaks[statName] || 90;
-  // Age-based progression curve
-  let ageFactor;
-  if (validAge < 13) {
-    // Youth development phase: rapid growth
-    ageFactor = 0.4 + (validAge - 4) * 0.03; // 0.4 to ~0.67 at age 12
-  } else if (validAge < 18) {
-    // Teen development: steady improvement
-    ageFactor = 0.67 + (validAge - 13) * 0.04; // 0.67 to ~0.87 at age 17
-  } else if (validAge < 24) {
-    // Young adult: approaching peak
-    ageFactor = 0.87 + (validAge - 18) * 0.02; // 0.87 to ~0.99 at age 23
-  } else if (validAge <= 28) {
-    // Peak years: maximum potential
-    ageFactor = 1.0;
-  } else if (validAge <= 32) {
-    // Early decline: slight reduction
-    ageFactor = 1.0 - (validAge - 28) * 0.015; // 1.0 to ~0.94 at age 32
-  } else {
-    // Veteran phase: gradual decline
-    ageFactor = Math.max(0.7, 0.94 - (validAge - 32) * 0.02);
-  }
-  return Math.round(peakValue * ageFactor);
-};
-// ✅ EXPORT: Get MIN stat value based on age
-export const getMinStatByAge = (age, statName = 'overall') => {
-  const validAge = Math.max(4, Math.min(56, age || 15));
-  // Minimum stats increase with age/experience
-  if (validAge < 13) return 10; // Very young: basics
-  if (validAge < 18) return 25; // Teens: developing
-  if (validAge < 24) return 40; // Young adults: competent
-  if (validAge <= 28) return 50; // Peak: solid foundation
-  return 45; // Veterans: experience compensates
-};
-// ✅ EXPORT: Validate stat is within age-appropriate range
-export const validateStat = (value, age, statName = 'overall') => {
-  const min = getMinStatByAge(age, statName);
-  const max = getMaxStatByAge(age, statName);
-  return Math.min(max, Math.max(min, value || min));
-};
-// ✅ EXPORT: Get age-based rating modifier for overall calculation
-export const getAgeRatingModifier = (age) => {
-  const validAge = Math.max(4, Math.min(56, age || 15));
-  if (validAge < 13) return 0.7; // Youth: stats count less toward overall
-  if (validAge < 18) return 0.85; // Teens: developing
-  if (validAge < 24) return 0.95; // Young adults: near peak
-  if (validAge <= 28) return 1.0; // Peak: full value
-  if (validAge <= 32) return 0.98; // Early decline
-  return 0.95; // Veterans: experience matters
-};
-// ✅ EXPORT: Get age group label
-export const getAgeGroup = (age) => {
-  if (!age) return 'Unknown';
-  if (age < 13) return 'Youth';
-  if (age < 18) return 'Junior';
-  if (age < 24) return 'Young Pro';
-  if (age <= 28) return 'Prime';
-  if (age <= 32) return 'Veteran';
-  return 'Legend';
-};
-// ✅ EXPORT: Calculate potential rating based on age and current stats
-export const calculatePotential = (currentRating, age, position) => {
-  if (!currentRating) return 60;
-  const validAge = Math.max(4, Math.min(56, age || 15));
-  // Age-based potential bonus
-  let ageBonus;
-  if (validAge < 18) ageBonus = 20; // High growth potential
-  else if (validAge < 24) ageBonus = 12; // Still improving
-  else if (validAge <= 28) ageBonus = 5; // Near peak
-  else if (validAge <= 32) ageBonus = 2; // Maintaining
-  else ageBonus = 0; // Declining
-  // Position-based bonus
-  const positionBonus = ['Forward', 'Midfielder', 'Winger'].includes(position) ? 2 : 0;
-  const potential = currentRating + ageBonus + positionBonus;
-  return Math.min(99, potential);
-};
-// ✅ EXPORT: Format number with commas
-export const formatNumber = (num) => {
-  if (num === null || num === undefined) return '0';
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
-// ✅ EXPORT: Generate unique ID
-export const generateId = () => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
-// ✅ EXPORT: Debounce helper for input handling
-export const debounce = (func, wait) => {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
+// Get total count
+export const getTotalPlayersCount = () => _players.length;
+// Check if can save more (free tier: 5 max)
+export const canSaveMorePlayers = (currentCount) => currentCount < 5;

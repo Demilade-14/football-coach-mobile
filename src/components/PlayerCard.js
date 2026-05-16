@@ -80,6 +80,10 @@ const PlayerCard = () => {
       )}
     </ScrollView>
   );
+  // In PlayerCardFC26.js, add after the card:
+<TouchableOpacity style={styles.shareButton} onPress={() => handleShare(player)}>
+  <Text>📤 Share Card</Text>
+</TouchableOpacity>
 };
 
 export default PlayerCard;

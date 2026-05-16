@@ -74,8 +74,7 @@ export default function TermsOfServiceScreen() {
         <Text style={styles.sectionTitle}>9. Contact</Text>
         <Text style={styles.text}>
           Questions? Contact us at:
-          {'\n\n'}Email: support@footballcoach.app
-          {'\n'}Website: www.footballcoach.app/terms
+          {'\n\n'}Email: muhammedajayi14@gmail.com
         </Text>
 
         <View style={styles.footer}>

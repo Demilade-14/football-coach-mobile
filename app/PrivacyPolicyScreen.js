@@ -67,8 +67,7 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.sectionTitle}>7. Contact Us</Text>
         <Text style={styles.text}>
           For privacy concerns, contact us at:
-          {'\n\n'}Email: privacy@footballcoach.app
-          {'\n'}Website: www.footballcoach.app/privacy
+          {'\n\n'}Email: muhammedajayi14@gmail.com
         </Text>
 
         <View style={styles.footer}>

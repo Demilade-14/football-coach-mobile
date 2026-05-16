@@ -202,7 +202,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.version}>Version 1.0.0</Text>
-          <Text style={styles.copyright}>Â© 2024 Football Coach</Text>
+          <Text style={styles.copyright}>Â© 2026 Football Coach</Text>
         </View>
       </ScrollView>
     </View>

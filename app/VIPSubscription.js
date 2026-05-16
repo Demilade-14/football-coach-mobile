@@ -1,178 +1,259 @@
-﻿// app/VIPSubscription.js
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-// Update path if your payment file is named differently
-import { startCheckout } from '../src/utils/paymentProcessor';
-
-const VIPSubscription = () => {
+﻿import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
+  Alert, ActivityIndicator, Linking, Platform
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// Your backend URL - update to your deployed backend
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://192.168.172.152:3000';
+const PLANS = {
+  monthly: {
+    id: 'price_monthly_vip',
+    name: 'Monthly VIP',
+    price: '$9.99',
+    period: '/month',
+    features: ['Unlimited AI coaching', 'Priority responses', 'Advanced analytics', 'Video analysis', 'Custom training plans'],
+    popular: false
+  },
+  yearly: {
+    id: 'price_yearly_vip',
+    name: 'Yearly VIP',
+    price: '$99.99',
+    period: '/year',
+    savings: 'Save 17%',
+    features: ['Everything in Monthly', '2 months FREE', 'VIP community', 'Early features', 'Dedicated support'],
+    popular: true
+  }
+};
+export default function VIPSubscription() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-
-  const handleSubscribe = async (planType) => {
-    if (loading) return;
-    
-    setSelectedPlan(planType);
-    setLoading(true);
-    
+  const [selectedPlan, setSelectedPlan] = useState('yearly');
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  useEffect(() => {
+    checkVIPStatus();
+    if (params.success === 'true') handleSuccessfulPayment();
+    else if (params.canceled === 'true') Alert.alert('Cancelled', 'You can upgrade anytime.');
+  }, [params]);
+  const checkVIPStatus = async () => {
     try {
-      const planDetails = {
-        Monthly: { amount: 499, planId: 'vip-monthly' }, // $4.99 in cents
-        Yearly: { amount: 3999, planId: 'vip-yearly' },  // $39.99 in cents
-      };
-      
-      const { amount, planId } = planDetails[planType];
-      
-      // TODO: Replace with actual Stripe/payment integration
-      const result = await startCheckout({
-        amount,
-        plan: planId,
-        userId: 'current-user-id', // Replace with actual user ID from auth
-      });
-      
-      if (result.success) {
-        Alert.alert(
-          'Success! ??',
-          `VIP ${planType} activated! Enjoy all premium features.`,
-          [{ text: 'Awesome!', onPress: () => router.replace('/') }]
-        );
-      } else {
-        Alert.alert('Payment Failed', result.error || 'Please try again.');
+      const isVIP = await AsyncStorage.getItem('isVIP');
+      const vipExpiry = await AsyncStorage.getItem('vipExpiry');
+      if (isVIP === 'true' && (!vipExpiry || new Date(vipExpiry) > new Date())) {
+        router.replace('/VIPChat');
+        return;
       }
-    } catch (error) {
-      console.error('Subscription error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again later.');
-    } finally {
-      setLoading(false);
-      setSelectedPlan(null);
+    } catch (e) { console.error(e); }
+    finally { setCheckingStatus(false); }
+  };
+  const handleSuccessfulPayment = async () => {
+    try {
+      console.log('✅ Activating VIP subscription...');
+      await AsyncStorage.setItem('isVIP', 'true');
+      await AsyncStorage.setItem('vipExpiry', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
+      await AsyncStorage.setItem('vipPlan', selectedPlan);
+      console.log('✅ VIP activated successfully!');
+      Alert.alert('🎉 Welcome to VIP!', 'Your subscription is active.', [
+        { text: 'Start Coaching', onPress: () => router.replace('/VIPChat') }
+      ]);
+    } catch (e) {
+      console.error('❌ Error activating VIP:', e);
+      Alert.alert('Error', 'Could not activate VIP.');
     }
   };
-
-  const handleGoBack = () => {
-    router.back();
+  const initiateStripeCheckout = async (planKey) => {
+    setLoading(true);
+    try {
+      console.log('🔄 Initiating Stripe checkout for plan:', planKey);
+      const userId = await AsyncStorage.getItem('userId') || 'current-user-id';
+      const plan = PLANS[planKey];
+      const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          planId: plan.id,
+          planName: plan.name,
+          price: plan.price,
+          returnUrl: `${Linking.makeUrl('/VIPSubscription')}?success=true`,
+          cancelUrl: `${Linking.makeUrl('/VIPSubscription')}?canceled=true`
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+      const { url } = await response.json();
+      console.log('🔗 Checkout URL received:', url);
+      if (url) {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          throw new Error('Cannot open payment URL');
+        }
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('❌ Payment error:', error);
+      Alert.alert('Payment Error', error.message || 'Try again', [
+        { text: 'Retry', onPress: () => initiateStripeCheckout(planKey) },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+    } finally { 
+      setLoading(false); 
+    }
   };
-
+  const handleSubscribe = (planKey) => {
+    console.log('📱 Subscribe button clicked for plan:', planKey);
+    setSelectedPlan(planKey);
+    if (__DEV__) {
+      // Dev mode: simulate payment
+      console.log('🧪 DEV MODE: Simulating payment...');
+      Alert.alert(
+        '🧪 Dev Mode', 
+        `Simulating ${PLANS[planKey].name} payment...\n\nIn production, this will open Stripe Checkout.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Simulate Payment', 
+            onPress: async () => {
+              setLoading(true);
+              console.log('⏳ Simulating payment delay...');
+              await new Promise(r => setTimeout(r, 1500));
+              console.log('✅ Payment simulated!');
+              await handleSuccessfulPayment();
+              setLoading(false);
+            }
+          }
+        ]
+      );
+    } else {
+      // Production: real Stripe
+      console.log('💳 Production mode: Opening Stripe Checkout');
+      initiateStripeCheckout(planKey);
+    }
+  };
+  if (checkingStatus) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator color="#ffd700" size="large" />
+        <Text style={styles.loadingText}>Checking subscription...</Text>
+      </View>
+    );
+  }
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>? Back</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>? VIP Subscription</Text>
-        <Text style={styles.subtitle}>Unlock premium coaching features</Text>
+        <Text style={styles.title}>⚽ VIP Coaching</Text>
+        <Text style={styles.subtitle}>Unlock unlimited AI coaching</Text>
       </View>
-
-      {/* Benefits List */}
-      <View style={styles.benefitsSection}>
-        <Text style={styles.sectionTitle}>? What You Get:</Text>
-        
-        <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>??</Text>
-          <Text style={styles.benefitText}>Unlimited AI coaching sessions</Text>
-        </View>
-        <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>??</Text>
-          <Text style={styles.benefitText}>Advanced analytics & progress tracking</Text>
-        </View>
-        <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>??</Text>
-          <Text style={styles.benefitText}>Exclusive training plans & drills</Text>
-        </View>
-        <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>??</Text>
-          <Text style={styles.benefitText}>Priority VIP chat support</Text>
-        </View>
-        <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>??</Text>
-          <Text style={styles.benefitText}>No ads - uninterrupted experience</Text>
-        </View>
+      <View style={styles.plansContainer}>
+        {Object.entries(PLANS).map(([key, plan]) => (
+          <TouchableOpacity 
+            key={key} 
+            style={[
+              styles.planCard, 
+              selectedPlan === key && styles.planCardSelected,
+              plan.popular && styles.planCardPopular
+            ]} 
+            onPress={() => {
+              console.log('📋 Plan card tapped:', key);
+              setSelectedPlan(key);
+            }}
+            activeOpacity={0.7}
+          >
+            {plan.popular && (
+              <View style={styles.popularBadge}>
+                <Text style={styles.popularText}>MOST POPULAR</Text>
+              </View>
+            )}
+            <Text style={styles.planName}>{plan.name}</Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.price}>{plan.price}</Text>
+              <Text style={styles.period}>{plan.period}</Text>
+            </View>
+            {plan.savings && <Text style={styles.savings}>{plan.savings}</Text>}
+            {plan.features.map((feature, i) => (
+              <Text key={i} style={styles.feature}>✓ {feature}</Text>
+            ))}
+          </TouchableOpacity>
+        ))}
       </View>
-
-      {/* Plan Cards */}
-      <View style={styles.plansSection}>
-        {/* Monthly Plan */}
-        <View style={styles.planCard}>
-          <Text style={styles.planTitle}>Monthly</Text>
-          <Text style={styles.planPrice}>$4.99<span style={{fontSize: 14, color: '#a8dadc'}}>/month</span></Text>
-          <Text style={styles.planDesc}>Billed monthly. Cancel anytime.</Text>
-        </View>
-
-        {/* Yearly Plan (Popular) */}
-        <View style={[styles.planCard, styles.popularPlan]}>
-          <View style={styles.popularBadge}>
-            <Text style={styles.popularText}>MOST POPULAR</Text>
-          </View>
-          <Text style={styles.planTitle}>Yearly</Text>
-          <Text style={styles.planPrice}>$39.99<span style={{fontSize: 14, color: '#a8dadc'}}>/year</span></Text>
-          <Text style={styles.planSavings}>?? Save 33% vs monthly</Text>
-          <Text style={styles.planDesc}>Best value! Billed annually.</Text>
-        </View>
-      </View>
-
-      {/* Subscribe Buttons */}
-      <View style={styles.buttonSection}>
-        <TouchableOpacity
-          style={[styles.subscribeButton, loading && styles.disabledButton]}
-          onPress={() => handleSubscribe('Monthly')}
-          disabled={loading}
-        >
-          {loading && selectedPlan === 'Monthly' ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.subscribeText}>Subscribe Monthly - $4.99</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.subscribeButton, styles.yearlyButton, loading && styles.disabledButton]}
-          onPress={() => handleSubscribe('Yearly')}
-          disabled={loading}
-        >
-          {loading && selectedPlan === 'Yearly' ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.subscribeText}>Subscribe Yearly - $39.99 ?? Save 33%</Text>
-          )}
-        </TouchableOpacity>
-
-        <Text style={styles.securityNote}>
-          ?? Secure payment via Stripe. Cancel anytime in Settings.
-        </Text>
+      <TouchableOpacity
+        style={[styles.subscribeBtn, loading && styles.subscribeBtnDisabled]}
+        onPress={() => {
+          console.log('💰 Subscribe button pressed! Plan:', selectedPlan);
+          handleSubscribe(selectedPlan);
+        }}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.subscribeText}>
+            Subscribe {PLANS[selectedPlan].price}{PLANS[selectedPlan].period}
+          </Text>
+        )}
+      </TouchableOpacity>
+      <View style={styles.footer}>
+        <Text style={styles.secure}>🔒 Secure payment via Stripe</Text>
+        <Text style={styles.terms}>Cancel anytime. Terms & Privacy apply.</Text>
       </View>
     </ScrollView>
   );
-};
-
-export default VIPSubscription;
-
+}
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d1b2a' },
-  content: { paddingBottom: 40 },
-  header: { padding: 20, alignItems: 'center', backgroundColor: '#1a2332', borderBottomWidth: 2, borderBottomColor: '#ffd700' },
-  backButton: { alignSelf: 'flex-start', padding: 8 },
-  backButtonText: { color: '#1e88e5', fontSize: 16, fontWeight: 'bold' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#ffd700', marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: '#a8dadc', textAlign: 'center' },
-  benefitsSection: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#f1faee', marginBottom: 16 },
-  benefitItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  benefitIcon: { fontSize: 20, marginRight: 12, width: 30 },
-  benefitText: { fontSize: 16, color: '#a8dadc', flex: 1 },
-  plansSection: { padding: 20 },
-  planCard: { backgroundColor: '#1a2332', borderRadius: 12, padding: 20, marginBottom: 16, borderWidth: 2, borderColor: 'transparent', position: 'relative' },
-  popularPlan: { borderColor: '#1e88e5' },
-  popularBadge: { position: 'absolute', top: -10, right: 20, backgroundColor: '#1e88e5', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  popularText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  planTitle: { fontSize: 20, fontWeight: 'bold', color: '#f1faee', marginBottom: 8 },
-  planPrice: { fontSize: 24, fontWeight: 'bold', color: '#ffd700', marginBottom: 4 },
-  planSavings: { fontSize: 14, color: '#28a745', fontWeight: '600', marginBottom: 8 },
-  planDesc: { fontSize: 14, color: '#a8dadc' },
-  buttonSection: { padding: 20 },
-  subscribeButton: { backgroundColor: '#1e88e5', padding: 18, borderRadius: 12, alignItems: 'center', marginBottom: 15 },
-  yearlyButton: { backgroundColor: '#28a745' },
-  subscribeText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  disabledButton: { opacity: 0.6 },
-  securityNote: { color: '#6b7280', fontSize: 12, textAlign: 'center', marginTop: 10 },
+  centered: { justifyContent: 'center', alignItems: 'center' },
+  content: { padding: 20 },
+  loadingText: { color: '#a8dadc', marginTop: 16, fontSize: 16 },
+  header: { alignItems: 'center', marginBottom: 24 },
+  backText: { color: '#1e88e5', fontSize: 16, alignSelf: 'flex-start' },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#ffd700', marginTop: 10 },
+  subtitle: { fontSize: 16, color: '#a8dadc', marginTop: 4 },
+  plansContainer: { gap: 16, marginBottom: 24 },
+  planCard: {
+    backgroundColor: '#1b263b',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: '#2a3f5f'
+  },
+  planCardSelected: { borderColor: '#ffd700' },
+  planCardPopular: { borderColor: '#ffd700', backgroundColor: '#1a2a4a' },
+  popularBadge: {
+    backgroundColor: '#ffd700',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 12
+  },
+  popularText: { color: '#0d1b2a', fontSize: 10, fontWeight: 'bold' },
+  planName: { fontSize: 20, fontWeight: 'bold', color: '#f1faee', marginBottom: 8 },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 4 },
+  price: { fontSize: 32, fontWeight: 'bold', color: '#ffd700' },
+  period: { fontSize: 16, color: '#a8dadc', marginLeft: 4 },
+  savings: { color: '#4CAF50', fontSize: 14, fontWeight: '600', marginBottom: 12 },
+  feature: { fontSize: 14, color: '#a8dadc', marginVertical: 4 },
+  subscribeBtn: {
+    backgroundColor: '#28a745',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  subscribeBtnDisabled: { opacity: 0.7 },
+  subscribeText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  footer: { alignItems: 'center', gap: 8, paddingBottom: 20 },
+  secure: { color: '#4CAF50', fontSize: 14 },
+  terms: { color: '#666', fontSize: 12, textAlign: 'center' }
 });

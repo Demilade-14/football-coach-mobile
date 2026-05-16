@@ -1,22 +1,13 @@
-﻿// app/PositionQuiz.js
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+﻿import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-// ? Import interstitial ad hook (create this file if missing)
-import { useInterstitialAd } from '../src/hooks/useInterstitialAd';
 
 const PositionQuiz = () => {
   const router = useRouter();
-  
-  // State declarations (missing in your version)
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [isCalculating, setIsCalculating] = useState(false);
-  
-  // Initialize ad hook
-  const { showInterstitial, isAdReady } = useInterstitialAd();
+  const [results, setResults] = useState(null);
 
-  // Quiz questions
   const questions = [
     {
       id: 1,
@@ -100,7 +91,7 @@ const PositionQuiz = () => {
     }
   ];
 
-  const positions = {
+  const positionNames = {
     striker: "Striker",
     winger: "Winger",
     midfielder: "Midfielder",
@@ -113,109 +104,113 @@ const PositionQuiz = () => {
     boxToBox: "Box-to-Box Midfielder"
   };
 
+  const positionDescriptions = {
+    striker: "You love being in the box and have a natural instinct for goal. A natural finisher.",
+    winger: "Pace, skill and directness define you. You love running at defenders with the ball.",
+    midfielder: "You control the tempo and connect defense to attack with precise passing.",
+    defender: "Solid, powerful and disciplined. You read the game and shut down opponents.",
+    goalkeeper: "Cool under pressure with sharp reflexes. The last line of defense.",
+    fullBack: "Athletic and energetic — you support attack and defend with equal quality.",
+    defensiveMid: "The shield in front of defense. You break up play and recycle possession.",
+    attackingMid: "The creative spark. You find pockets of space and unlock defenses.",
+    deepLying: "The quarterback of the team. Your vision and passing range control games.",
+    boxToBox: "The complete midfielder. You cover every blade of grass and contribute everywhere."
+  };
+
   const resetQuiz = () => {
     setCurrentQuestion(0);
     setAnswers({});
-    setIsCalculating(false);
+    setResults(null);
   };
 
   const handleAnswer = (option) => {
-    if (isCalculating) return;
-    
     const newAnswers = { ...answers };
-    
-    Object.keys(option.points).forEach(position => {
-      newAnswers[position] = (newAnswers[position] || 0) + option.points[position];
+    Object.keys(option.points).forEach(pos => {
+      newAnswers[pos] = (newAnswers[pos] || 0) + option.points[pos];
     });
 
     if (currentQuestion < questions.length - 1) {
       setAnswers(newAnswers);
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      setIsCalculating(true);
-      showResults(newAnswers);
+      // Calculate results
+      const sorted = Object.entries(newAnswers)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+      setResults(sorted);
     }
-  };
-
-  const showResults = (finalAnswers) => {
-    setTimeout(() => {
-      try {
-        const entries = Object.entries(finalAnswers || {});
-        
-        if (!entries || entries.length === 0) {
-          Alert.alert('?? No Result', 'Could not determine a position.', [
-            { text: 'Retake Quiz', onPress: resetQuiz }
-          ]);
-          setIsCalculating(false);
-          return;
-        }
-
-        const sorted = entries.sort((a, b) => b[1] - a[1]).slice(0, 3);
-        const getPositionName = (key) => positions[key] || key.replace(/([A-Z])/g, ' $1').trim();
-        
-        const results = sorted.map(([key, score], index) => {
-          const name = getPositionName(key);
-          const emoji = ['??', '??', '??'][index];
-          return `${emoji} ${name} (${score} pts)`;
-        });
-
-        while (results.length < 3) results.push('—');
-
-        Alert.alert(
-          '?? Your Ideal Positions!',
-          results.join('\n') + '\n\nThese positions match your playing style best!',
-          [
-            {
-              text: 'Create Player Card',
-              onPress: () => {
-                // Show interstitial before navigating (30% chance)
-                if (Math.random() > 0.7 && isAdReady) {
-                  showInterstitial();
-                }
-                
-                setTimeout(() => {
-                  try {
-                    router.push('/ProfileForm');
-                  } catch (err) {
-                    console.error('? Navigation failed:', err);
-                    Alert.alert('Error', 'Profile form not found.');
-                  }
-                }, 600);
-              },
-              style: 'default'
-            },
-            {
-              text: 'Retake Quiz',
-              onPress: resetQuiz,
-              style: 'cancel'
-            }
-          ],
-          { cancelable: false, onDismiss: () => setIsCalculating(false) }
-        );
-      } catch (error) {
-        console.error('?? showResults error:', error);
-        Alert.alert('Error', 'Something went wrong. Please try again.', [
-          { text: 'Retake Quiz', onPress: resetQuiz }
-        ]);
-        setIsCalculating(false);
-      }
-    }, 100);
   };
 
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
+  // RESULTS SCREEN
+  if (results) {
+    const topPosition = results[0];
+    const medals = ['🥇', '🥈', '🥉'];
+    const colors = ['#ffd700', '#c0c0c0', '#cd7f32'];
+
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.resultsContainer}>
+          <Text style={styles.resultsTitle}>Your Ideal Positions!</Text>
+          <Text style={styles.resultsSubtitle}>Based on your answers</Text>
+
+          {results.map(([posKey, score], index) => {
+            const name = positionNames[posKey] || posKey;
+            const desc = positionDescriptions[posKey] || '';
+            const maxScore = questions.length * 3;
+            const pct = Math.round((score / maxScore) * 100);
+            return (
+              <View key={posKey} style={[styles.resultCard, { borderColor: colors[index] }]}>
+                <View style={styles.resultHeader}>
+                  <Text style={styles.resultMedal}>{medals[index]}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.resultPosition, { color: colors[index] }]}>{name}</Text>
+                    <Text style={styles.resultScore}>{score} pts ({pct}% match)</Text>
+                  </View>
+                </View>
+                <View style={styles.resultBarBg}>
+                  <View style={[styles.resultBarFill, { width: `${pct}%`, backgroundColor: colors[index] }]} />
+                </View>
+                <Text style={styles.resultDesc}>{desc}</Text>
+              </View>
+            );
+          })}
+
+          <View style={styles.resultButtons}>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => router.push('/ProfileForm')}
+            >
+              <Text style={styles.primaryBtnText}>Create Player Card</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={resetQuiz}>
+              <Text style={styles.secondaryBtnText}>Retake Quiz</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Text style={styles.backBtnText}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // QUIZ SCREEN
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} disabled={isCalculating}>
-          <Text style={[styles.backButton, isCalculating && styles.disabled]}>? Back</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>?? Find My Position</Text>
+        <Text style={styles.title}>Find My Position</Text>
         <Text style={styles.subtitle}>Discover your ideal playing position</Text>
       </View>
 
       <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>Question {currentQuestion + 1} of {questions.length}</Text>
+        <Text style={styles.progressText}>
+          Question {currentQuestion + 1} of {questions.length}
+        </Text>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
@@ -223,19 +218,21 @@ const PositionQuiz = () => {
 
       <View style={styles.questionContainer}>
         <Text style={styles.question}>{questions[currentQuestion]?.question}</Text>
-        
         {questions[currentQuestion]?.options.map((option, index) => (
           <TouchableOpacity
             key={index}
-            style={[styles.optionButton, isCalculating && styles.optionDisabled]}
+            style={styles.optionButton}
             onPress={() => handleAnswer(option)}
-            disabled={isCalculating}
             activeOpacity={0.7}
           >
             <Text style={styles.optionText}>{option.text}</Text>
           </TouchableOpacity>
         ))}
       </View>
+
+      {currentQuestion === questions.length - 1 && (
+        <Text style={styles.hintText}>Last question! Your results will appear next.</Text>
+      )}
     </ScrollView>
   );
 };
@@ -246,23 +243,48 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d1b2a' },
   header: { padding: 20, alignItems: 'center' },
   backButton: { color: '#1e88e5', fontSize: 16, fontWeight: 'bold', alignSelf: 'flex-start', marginBottom: 10 },
-  disabled: { opacity: 0.5 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#ffd700', marginBottom: 8 },
   subtitle: { fontSize: 16, color: '#a8dadc', textAlign: 'center' },
-  progressContainer: { padding: 20 },
+  progressContainer: { paddingHorizontal: 20, paddingBottom: 20 },
   progressText: { color: '#f1faee', fontSize: 14, marginBottom: 8, textAlign: 'center' },
   progressBar: { height: 8, backgroundColor: '#1b263b', borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#ffd700', borderRadius: 4 },
   questionContainer: { padding: 20 },
   question: { fontSize: 22, fontWeight: 'bold', color: '#f1faee', marginBottom: 30, textAlign: 'center' },
-  optionButton: { 
-    backgroundColor: '#1b263b', 
-    padding: 20, 
-    borderRadius: 12, 
-    marginBottom: 15, 
-    borderWidth: 2, 
-    borderColor: '#415a77' 
+  optionButton: {
+    backgroundColor: '#1b263b',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#415a77',
   },
-  optionDisabled: { opacity: 0.6 },
-  optionText: { fontSize: 16, color: '#f1faee', textAlign: 'center', fontWeight: '600' },
+  optionText: { color: '#f1faee', fontSize: 16, textAlign: 'center', fontWeight: '600' },
+  hintText: { color: '#ffd700', fontSize: 13, textAlign: 'center', padding: 20, fontStyle: 'italic' },
+
+  // Results styles
+  resultsContainer: { padding: 20 },
+  resultsTitle: { fontSize: 28, fontWeight: 'bold', color: '#ffd700', textAlign: 'center', marginBottom: 8, marginTop: 20 },
+  resultsSubtitle: { fontSize: 16, color: '#a8dadc', textAlign: 'center', marginBottom: 30 },
+  resultCard: {
+    backgroundColor: '#1b263b',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 2,
+  },
+  resultHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  resultMedal: { fontSize: 36, marginRight: 15 },
+  resultPosition: { fontSize: 20, fontWeight: 'bold', marginBottom: 2 },
+  resultScore: { color: '#a8dadc', fontSize: 13 },
+  resultBarBg: { height: 8, backgroundColor: '#0d1b2a', borderRadius: 4, marginBottom: 12, overflow: 'hidden' },
+  resultBarFill: { height: '100%', borderRadius: 4 },
+  resultDesc: { color: '#f1faee', fontSize: 14, lineHeight: 20 },
+  resultButtons: { marginTop: 10, gap: 12 },
+  primaryBtn: { backgroundColor: '#ffd700', padding: 16, borderRadius: 12, alignItems: 'center' },
+  primaryBtnText: { color: '#0d1b2a', fontSize: 16, fontWeight: 'bold' },
+  secondaryBtn: { backgroundColor: '#1b263b', padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#415a77' },
+  secondaryBtnText: { color: '#ffd700', fontSize: 16, fontWeight: '600' },
+  backBtn: { padding: 16, alignItems: 'center' },
+  backBtnText: { color: '#a8dadc', fontSize: 15 },
 });
