@@ -1,5 +1,5 @@
 ﻿// src/utils/playerDatabase.js
-// Player stats storage and position recommendation
+// Complete player stats storage and utility functions
 export const playerDatabase = {
   players: [],
   addPlayer: (player) => {
@@ -35,45 +35,50 @@ export const recommendPosition = (stats) => {
     physical = 50, 
     dribbling = 50 
   } = stats;
-  // Defender: high defending + physical
   if (defending > 75 && physical > 70) return "Defender";
-  // Forward: high pace + shooting
   if (pace > 80 && shooting > 75) return "Forward";
-  // Midfielder: high passing + dribbling
   if (passing > 75 && dribbling > 70) return "Midfielder";
-  // Winger: very high pace
   if (pace > 85) return "Winger";
-  // Striker: very high shooting
   if (shooting > 80) return "Striker";
-  // Default
   return "Midfielder";
 };
-// ✅ Calculate overall rating from stats
-export const calculateOverallRating = (stats) => {
-  if (!stats) return 50;
+// ✅ Calculate overall rating from stats (THIS WAS MISSING!)
+export const calculateOverall = (stats) => {
+  if (!stats || typeof stats !== "object") return 50;
   const values = Object.values(stats).filter(v => typeof v === 'number');
   if (values.length === 0) return 50;
-  return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  return Math.round(avg);
 };
-export const getMaxStatByAge = (age) => {
-  if (age <= 14) return 60;
-  if (age <= 16) return 70;
-  if (age <= 18) return 80;
-  if (age <= 21) return 88;
-  if (age <= 25) return 95;
-  if (age <= 29) return 99;
-  if (age <= 33) return 92;
-  if (age <= 37) return 85;
-  return 75;
+// ✅ Get maximum expected stat value for a given age (for slider limits)
+export const getMaxStatByAge = (age, statName) => {
+  if (!age || age < 13) age = 13;
+  if (age > 35) age = 35;
+  const ageFactor = age <= 28 
+    ? 0.5 + (age - 13) * 0.035
+    : 1.0 - (age - 28) * 0.015;
+  const statCeilings = {
+    pace: 95,
+    shooting: 92,
+    passing: 94,
+    defending: 93,
+    physical: 90,
+    dribbling: 94,
+    overall: 99
+  };
+  const baseMax = statCeilings[statName] || 90;
+  return Math.round(baseMax * ageFactor);
 };
-
-export const calculatePotential = (currentRating, age, position) => {
-  if (!currentRating) return 60;
-  const ageBonus = age < 23 ? 15 : age < 28 ? 8 : age < 32 ? 3 : 0;
-  const positionBonus = ["Forward", "Midfielder"].includes(position) ? 2 : 0;
-  return Math.min(99, currentRating + ageBonus + positionBonus);
+// ✅ Get minimum expected stat value for a given age
+export const getMinStatByAge = (age, statName) => {
+  if (!age || age < 13) age = 13;
+  if (age > 35) age = 35;
+  const minBase = age <= 18 
+    ? 30 + (age - 13) * 4
+    : 50 + (age - 18) * 1;
+  return Math.min(85, Math.max(25, minBase));
 };
-
+// ✅ Get age group label
 export const getAgeGroup = (age) => {
   if (!age) return "Unknown";
   if (age < 16) return "Youth";
@@ -81,4 +86,17 @@ export const getAgeGroup = (age) => {
   if (age < 25) return "Young Pro";
   if (age < 30) return "Prime";
   return "Veteran";
+};
+// ✅ Calculate potential rating
+export const calculatePotential = (currentRating, age, position) => {
+  if (!currentRating) return 60;
+  const ageBonus = age < 23 ? 15 : age < 28 ? 8 : age < 32 ? 3 : 0;
+  const positionBonus = ["Forward", "Midfielder"].includes(position) ? 2 : 0;
+  return Math.min(99, currentRating + ageBonus + positionBonus);
+};
+// ✅ Validate stat value within age-appropriate range
+export const validateStat = (value, age, statName) => {
+  const min = getMinStatByAge(age, statName);
+  const max = getMaxStatByAge(age, statName);
+  return Math.min(max, Math.max(min, value));
 };
