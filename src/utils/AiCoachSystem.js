@@ -1,4 +1,4 @@
-﻿export class AICoachSystem {
+export class AICoachSystem {
   static generateRealTimeFeedback(playerStats, currentActivity) {
     const feedback = [];
     
@@ -115,15 +115,6 @@
       ]
     };
   }
-}export const AICoachSystem = {
-  initialize: (playerData) => {
-    console.log("AICoachSystem initialized", playerData);
-    return true;
-  },
-  getAdvice: (stats) => {
-    return "Keep training hard and focus on your weaknesses!";
-  },
-  analyzePeformance: (data) => {
-    return { score: 75, feedback: "Good progress!" };
+}
   }
 };
