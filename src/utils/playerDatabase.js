@@ -55,3 +55,14 @@ export const calculateOverallRating = (stats) => {
   if (values.length === 0) return 50;
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 };
+export const getMaxStatByAge = (age) => {
+  if (age <= 14) return 60;
+  if (age <= 16) return 70;
+  if (age <= 18) return 80;
+  if (age <= 21) return 88;
+  if (age <= 25) return 95;
+  if (age <= 29) return 99;
+  if (age <= 33) return 92;
+  if (age <= 37) return 85;
+  return 75;
+};
