@@ -160,3 +160,15 @@ export const clearAllPlayers = async () => {
     return { success: false, message: 'Failed to clear players' };
   }
 };
+// Returns max stat value based on player age
+export const getMaxStatByAge = (age) => {
+  if (age <= 14) return 60;
+  if (age <= 16) return 70;
+  if (age <= 18) return 80;
+  if (age <= 21) return 88;
+  if (age <= 25) return 95;
+  if (age <= 29) return 99;
+  if (age <= 33) return 92;
+  if (age <= 37) return 85;
+  return 75;
+};
