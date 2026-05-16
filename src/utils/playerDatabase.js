@@ -66,3 +66,19 @@ export const getMaxStatByAge = (age) => {
   if (age <= 37) return 85;
   return 75;
 };
+
+export const calculatePotential = (currentRating, age, position) => {
+  if (!currentRating) return 60;
+  const ageBonus = age < 23 ? 15 : age < 28 ? 8 : age < 32 ? 3 : 0;
+  const positionBonus = ["Forward", "Midfielder"].includes(position) ? 2 : 0;
+  return Math.min(99, currentRating + ageBonus + positionBonus);
+};
+
+export const getAgeGroup = (age) => {
+  if (!age) return "Unknown";
+  if (age < 16) return "Youth";
+  if (age < 20) return "Junior";
+  if (age < 25) return "Young Pro";
+  if (age < 30) return "Prime";
+  return "Veteran";
+};
