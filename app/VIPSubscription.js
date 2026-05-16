@@ -1,9 +1,9 @@
-﻿// app/VIPSubscription.js
+// app/VIPSubscription.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 // Update path if your payment file is named differently
-import { startCheckout } from './utils/paymentProcessor';
+import { startCheckout } from '../src/utils/paymentProcessor';
 
 const VIPSubscription = () => {
   const router = useRouter();
@@ -33,7 +33,7 @@ const VIPSubscription = () => {
       
       if (result.success) {
         Alert.alert(
-          'Success! 🎉',
+          'Success! ??',
           `VIP ${planType} activated! Enjoy all premium features.`,
           [{ text: 'Awesome!', onPress: () => router.replace('/') }]
         );
@@ -58,34 +58,34 @@ const VIPSubscription = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>? Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>⚡ VIP Subscription</Text>
+        <Text style={styles.title}>? VIP Subscription</Text>
         <Text style={styles.subtitle}>Unlock premium coaching features</Text>
       </View>
 
       {/* Benefits List */}
       <View style={styles.benefitsSection}>
-        <Text style={styles.sectionTitle}>✨ What You Get:</Text>
+        <Text style={styles.sectionTitle}>? What You Get:</Text>
         
         <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>🎯</Text>
+          <Text style={styles.benefitIcon}>??</Text>
           <Text style={styles.benefitText}>Unlimited AI coaching sessions</Text>
         </View>
         <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>📊</Text>
+          <Text style={styles.benefitIcon}>??</Text>
           <Text style={styles.benefitText}>Advanced analytics & progress tracking</Text>
         </View>
         <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>🏆</Text>
+          <Text style={styles.benefitIcon}>??</Text>
           <Text style={styles.benefitText}>Exclusive training plans & drills</Text>
         </View>
         <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>💬</Text>
+          <Text style={styles.benefitIcon}>??</Text>
           <Text style={styles.benefitText}>Priority VIP chat support</Text>
         </View>
         <View style={styles.benefitItem}>
-          <Text style={styles.benefitIcon}>🚫</Text>
+          <Text style={styles.benefitIcon}>??</Text>
           <Text style={styles.benefitText}>No ads - uninterrupted experience</Text>
         </View>
       </View>
@@ -106,7 +106,7 @@ const VIPSubscription = () => {
           </View>
           <Text style={styles.planTitle}>Yearly</Text>
           <Text style={styles.planPrice}>$39.99<span style={{fontSize: 14, color: '#a8dadc'}}>/year</span></Text>
-          <Text style={styles.planSavings}>🔥 Save 33% vs monthly</Text>
+          <Text style={styles.planSavings}>?? Save 33% vs monthly</Text>
           <Text style={styles.planDesc}>Best value! Billed annually.</Text>
         </View>
       </View>
@@ -133,12 +133,12 @@ const VIPSubscription = () => {
           {loading && selectedPlan === 'Yearly' ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.subscribeText}>Subscribe Yearly - $39.99 🔥 Save 33%</Text>
+            <Text style={styles.subscribeText}>Subscribe Yearly - $39.99 ?? Save 33%</Text>
           )}
         </TouchableOpacity>
 
         <Text style={styles.securityNote}>
-          🔒 Secure payment via Stripe. Cancel anytime in Settings.
+          ?? Secure payment via Stripe. Cancel anytime in Settings.
         </Text>
       </View>
     </ScrollView>

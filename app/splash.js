@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { footballQuotes } from './utils/inspirations';
+import { footballQuotes } from '../src/utils/inspirations';
 
 export default function SplashScreen() {
   const router = useRouter();

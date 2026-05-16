@@ -1,4 +1,4 @@
-﻿// app/AICoachScreen.js
+// app/AICoachScreen.js
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
@@ -6,8 +6,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AICoachSystem } from './utils/AiCoachSystem';
-import AdBanner from './components/AdBanner';
+import { AICoachSystem } from '../src/utils/AiCoachSystem';
+import AdBanner from '../src/components/AdBanner';
 
 // Translation dictionary (simplified example)
 const t = {
@@ -48,20 +48,20 @@ const t = {
 
 // Available languages
 const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr', name: 'French', flag: '🇫🇷' },
-  { code: 'de', name: 'German', flag: '🇩🇪' },
+  { code: 'en', name: 'English', flag: '????' },
+  { code: 'es', name: 'Spanish', flag: '????' },
+  { code: 'fr', name: 'French', flag: '????' },
+  { code: 'de', name: 'German', flag: '????' },
 ];
 
 // Category filter options
 const CATEGORIES = [
-  { key: 'all', label: 'All', icon: '🌟' },
-  { key: 'football', label: 'Football', icon: '⚽' },
-  { key: 'motivation', label: 'Motivation', icon: '🔥' },
-  { key: 'leadership', label: 'Leadership', icon: '👑' },
-  { key: 'wisdom', label: 'Wisdom', icon: '📚' },
-  { key: 'custom', label: 'Custom', icon: '📝' },
+  { key: 'all', label: 'All', icon: '??' },
+  { key: 'football', label: 'Football', icon: '?' },
+  { key: 'motivation', label: 'Motivation', icon: '??' },
+  { key: 'leadership', label: 'Leadership', icon: '??' },
+  { key: 'wisdom', label: 'Wisdom', icon: '??' },
+  { key: 'custom', label: 'Custom', icon: '??' },
 ];
 
 const AICoachScreen = () => {
@@ -143,7 +143,7 @@ const AICoachScreen = () => {
         isCustom: true
       }));
       filtered = [...filtered, ...customWithCategory];
-      console.log(`➕ Added ${customWithCategory.length} custom quotes`);
+      console.log(`? Added ${customWithCategory.length} custom quotes`);
     }
     
     // Add AI-generated quotes (example - replace with actual API call)
@@ -155,13 +155,13 @@ const AICoachScreen = () => {
     const count = Math.min(5, shuffled.length);
     const selected = shuffled.slice(0, count);
     
-    console.log(`✅ Selected ${selected.length} quotes to display`);
+    console.log(`? Selected ${selected.length} quotes to display`);
     
     // Format quotes for display
     const translatedTips = selected.map((q, i) => ({
       id: `quote-${i}-${Date.now()}-${Math.random()}`,
-      category: `${q.isCustom ? '📝' : getCategoryIcon(q.category)} ${getCategoryLabel(q.category)}`,
-      tip: `"${translateQuote(q.quote, selectedLanguage)}"\n\n— ${q.player}`,
+      category: `${q.isCustom ? '??' : getCategoryIcon(q.category)} ${getCategoryLabel(q.category)}`,
+      tip: `"${translateQuote(q.quote, selectedLanguage)}"\n\n� ${q.player}`,
       exercises: []
     }));
     
@@ -171,13 +171,13 @@ const AICoachScreen = () => {
   // Helper: Get icon for category
   const getCategoryIcon = (category) => {
     const icons = {
-      football: '⚽', basketball: '🏀', tennis: '🎾',
-      boxing: '🥊', athletics: '🏃', gymnastics: '🤸',
-      coach: '👔', business: '💼', entertainment: '🎬',
-      leadership: '👑', wisdom: '📚', motivation: '🔥',
-      productivity: '⚡', custom: '📝'
+      football: '?', basketball: '??', tennis: '??',
+      boxing: '??', athletics: '??', gymnastics: '??',
+      coach: '??', business: '??', entertainment: '??',
+      leadership: '??', wisdom: '??', motivation: '??',
+      productivity: '?', custom: '??'
     };
-    return icons[category] || '💭';
+    return icons[category] || '??';
   };
 
   // Helper: Get label for category
@@ -243,7 +243,7 @@ const AICoachScreen = () => {
     try {
       router.back();
     } catch (error) {
-      console.log('⬅️ Back not available, navigating to home');
+      console.log('?? Back not available, navigating to home');
       router.replace('/');
     }
   };
@@ -285,13 +285,13 @@ const AICoachScreen = () => {
   }
 
   return (
-    // ✅ Wrap in flex container for banner at bottom
+    // ? Wrap in flex container for banner at bottom
     <View style={{ flex: 1, backgroundColor: '#0d1b2a' }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Header with Back & Language */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={styles.backText}>← {t.back}</Text>
+            <Text style={styles.backText}>? {t.back}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -304,7 +304,7 @@ const AICoachScreen = () => {
           </TouchableOpacity>
         </View>
         
-        <Text style={styles.title}>🧠 {t.dailyWisdom}</Text>
+        <Text style={styles.title}>?? {t.dailyWisdom}</Text>
         <Text style={styles.subtitle}>{t.inspirationFrom}</Text>
 
         {/* Category Filter Chips */}
@@ -321,7 +321,7 @@ const AICoachScreen = () => {
                 selectedCategory === cat.key && styles.categoryChipActive
               ]}
               onPress={() => {
-                console.log('🎯 Category selected:', cat.key);
+                console.log('?? Category selected:', cat.key);
                 setSelectedCategory(cat.key);
                 if (showMotivational) {
                   loadMotivationalQuotes();
@@ -343,12 +343,12 @@ const AICoachScreen = () => {
           style={styles.addQuoteButton}
           onPress={() => setShowAddModal(true)}
         >
-          <Text style={styles.addQuoteButtonText}>✍️ {t.addQuote}</Text>
+          <Text style={styles.addQuoteButtonText}>?? {t.addQuote}</Text>
         </TouchableOpacity>
 
         {showMotivational && (
           <View style={styles.motivationalHeader}>
-            <Text style={styles.motivationalTitle}>🌟 {t.dailyWisdom}</Text>
+            <Text style={styles.motivationalTitle}>?? {t.dailyWisdom}</Text>
             <Text style={styles.motivationalSubtitle}>{t.inspirationFrom}</Text>
           </View>
         )}
@@ -362,7 +362,7 @@ const AICoachScreen = () => {
               {tip.exercises?.length > 0 && (
                 <View style={styles.exercises}>
                   {tip.exercises.map((ex, eidx) => (
-                    <Text key={eidx} style={styles.exercise}>• {ex}</Text>
+                    <Text key={eidx} style={styles.exercise}>� {ex}</Text>
                   ))}
                 </View>
               )}
@@ -416,7 +416,7 @@ const AICoachScreen = () => {
                   <Text style={styles.languageItemText}>
                     {lang.flag} {lang.name}
                   </Text>
-                  {selectedLanguage === lang.code && <Text style={styles.checkmark}>✓</Text>}
+                  {selectedLanguage === lang.code && <Text style={styles.checkmark}>?</Text>}
                 </TouchableOpacity>
               ))}
               <TouchableOpacity 
@@ -480,7 +480,7 @@ const AICoachScreen = () => {
         </Modal>
       </ScrollView>
 
-      {/* ✅ Banner Ad - Sticks to bottom, hidden for VIP */}
+      {/* ? Banner Ad - Sticks to bottom, hidden for VIP */}
       <AdBanner />
     </View>
   );

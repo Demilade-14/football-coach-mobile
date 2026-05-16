@@ -1,11 +1,11 @@
-﻿// app/AuthScreen.js
+// app/AuthScreen.js
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, isFirebaseInitialized, firebaseInitError } from './utils/firebaseConfig';
+import { auth, isFirebaseInitialized, firebaseInitError } from '../src/utils/firebaseConfig';
 
 const AuthScreen = () => {
   const router = useRouter();
@@ -63,10 +63,10 @@ const AuthScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      {/* ✅ Emoji placeholder instead of broken image */}
-      <Text style={styles.logo}>⚽</Text>
+      {/* ? Emoji placeholder instead of broken image */}
+      <Text style={styles.logo}>?</Text>
       
-      <Text style={styles.title}>⚽ Football Coach</Text>
+      <Text style={styles.title}>? Football Coach</Text>
       <Text style={styles.subtitle}>Your Personal Training Assistant</Text>
 
       <View style={styles.form}>
@@ -107,7 +107,7 @@ const AuthScreen = () => {
             onPress={() => setShowPassword(!showPassword)}
             activeOpacity={0.7}
           >
-            <Text style={styles.eyeText}>{showPassword ? '👁️' : '🙈'}</Text>
+            <Text style={styles.eyeText}>{showPassword ? '???' : '??'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -120,7 +120,7 @@ const AuthScreen = () => {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>{isLogin ? '🔑 Login' : '📝 Sign Up'}</Text>
+            <Text style={styles.buttonText}>{isLogin ? '?? Login' : '?? Sign Up'}</Text>
           )}
         </TouchableOpacity>
 
@@ -142,7 +142,7 @@ export default AuthScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d1b2a' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  // ✅ Text styles for emoji logo
+  // ? Text styles for emoji logo
   logo: { 
     fontSize: 80, 
     marginBottom: 20, 

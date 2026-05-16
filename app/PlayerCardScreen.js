@@ -1,9 +1,9 @@
-﻿// app/PlayerCardScreen.js
+// app/PlayerCardScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Share } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-// ⚠️ Update path if your file is named playerDatabase.js instead of database.js
-import { getAllPlayers } from './utils/playerDatabase';
+// ?? Update path if your file is named playerDatabase.js instead of database.js
+import { getAllPlayers } from '../src/utils/playerDatabase';
 
 const PlayerCardScreen = () => {
   const router = useRouter();
@@ -33,7 +33,7 @@ const PlayerCardScreen = () => {
   const handleShare = async (player) => {
     try {
       await Share.share({
-        message: `Check out my player: ${player.name}!\n⚽ Overall: ${player.overall}\n🎯 Position: ${player.position}`,
+        message: `Check out my player: ${player.name}!\n? Overall: ${player.overall}\n?? Position: ${player.position}`,
         title: `${player.name} - Football Coach`,
       });
     } catch (error) {
@@ -101,16 +101,16 @@ const PlayerCardScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>? Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>⚽ Player Cards</Text>
+        <Text style={styles.title}>? Player Cards</Text>
         <Text style={styles.subtitle}>Tap a card to view details</Text>
       </View>
 
       {/* Player List */}
       {players.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🎮</Text>
+          <Text style={styles.emptyIcon}>??</Text>
           <Text style={styles.emptyText}>No players yet</Text>
           <Text style={styles.emptySubtext}>Create your first player to get started</Text>
           <TouchableOpacity 
@@ -149,8 +149,8 @@ const PlayerCardScreen = () => {
 
                 {/* Stats Preview */}
                 <View style={styles.statsPreview}>
-                  <Text style={styles.stat}>⚡ Pace: {player.pace || '-'}</Text>
-                  <Text style={styles.stat}>🎯 Shooting: {player.shooting || '-'}</Text>
+                  <Text style={styles.stat}>? Pace: {player.pace || '-'}</Text>
+                  <Text style={styles.stat}>?? Shooting: {player.shooting || '-'}</Text>
                 </View>
               </View>
 
@@ -160,19 +160,19 @@ const PlayerCardScreen = () => {
                   style={styles.actionButton}
                   onPress={() => handleShare(player)}
                 >
-                  <Text style={styles.actionIcon}>📤</Text>
+                  <Text style={styles.actionIcon}>??</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.actionButton}
                   onPress={() => handleEdit(player)}
                 >
-                  <Text style={styles.actionIcon}>✏️</Text>
+                  <Text style={styles.actionIcon}>??</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => handleDelete(player)}
                 >
-                  <Text style={styles.actionIcon}>🗑️</Text>
+                  <Text style={styles.actionIcon}>???</Text>
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -188,7 +188,7 @@ const PlayerCardScreen = () => {
               style={styles.closeModal}
               onPress={() => setSelectedPlayer(null)}
             >
-              <Text style={styles.closeText}>✕</Text>
+              <Text style={styles.closeText}>?</Text>
             </TouchableOpacity>
             
             <View style={styles.modalHeader}>
@@ -231,7 +231,7 @@ const PlayerCardScreen = () => {
                 style={[styles.modalButton, styles.shareButton]}
                 onPress={() => handleShare(selectedPlayer)}
               >
-                <Text style={styles.modalButtonText}>📤 Share</Text>
+                <Text style={styles.modalButtonText}>?? Share</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.modalButton, styles.editButton]}
@@ -240,7 +240,7 @@ const PlayerCardScreen = () => {
                   handleEdit(selectedPlayer);
                 }}
               >
-                <Text style={styles.modalButtonText}>✏️ Edit</Text>
+                <Text style={styles.modalButtonText}>?? Edit</Text>
               </TouchableOpacity>
             </View>
           </View>

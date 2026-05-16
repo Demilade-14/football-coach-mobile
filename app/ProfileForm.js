@@ -1,9 +1,9 @@
-﻿// app/ProfileForm.js
+// app/ProfileForm.js
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View, TouchableOpacity, Alert, Image, Modal, FlatList, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import PlayerCard from './components/PlayerCard';
+import PlayerCard from '../src/components/PlayerCard';
 import { 
   calculateOverall, 
   getImprovementTips, 
@@ -12,7 +12,7 @@ import {
   savePlayer,
   getTotalPlayersCount,
   canSaveMorePlayers
-} from './utils/playerDatabase';
+} from '../src/utils/playerDatabase';
 
 // Simple StarRating component
 const StarRating = ({ value, onChange, max = 5 }) => {
@@ -24,7 +24,7 @@ const StarRating = ({ value, onChange, max = 5 }) => {
           style={styles.starButton}
           onPress={() => onChange(i + 1)}
         >
-          <Text style={[styles.star, i < value ? styles.starActive : styles.starInactive]}>★</Text>
+          <Text style={[styles.star, i < value ? styles.starActive : styles.starInactive]}>?</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -264,7 +264,7 @@ const ProfileForm = () => {
       </View>
 
       <View style={styles.imageSection}>
-        <Text style={styles.label}>👤 Add Your Face (Optional)</Text>
+        <Text style={styles.label}>?? Add Your Face (Optional)</Text>
         <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
           {image ? (
             <Image source={{ uri: image }} style={styles.playerImage} />
@@ -274,7 +274,7 @@ const ProfileForm = () => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.label}>⚡ Quick Templates</Text>
+      <Text style={styles.label}>? Quick Templates</Text>
       <View style={styles.templateGrid}>
         {['Custom', 'Striker', 'Winger', 'Midfielder', 'Defender', 'Goalkeeper'].map((temp) => (
           <TouchableOpacity
@@ -341,34 +341,34 @@ const ProfileForm = () => {
 
       <View style={styles.conditionsSection}>
         <TouchableOpacity style={[styles.conditionButton, disability && styles.conditionActive]} onPress={() => setDisability(!disability)}>
-          <Text style={[styles.conditionText, disability && styles.conditionTextActive]}>♿ Disability Support</Text>
+          <Text style={[styles.conditionText, disability && styles.conditionTextActive]}>? Disability Support</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.conditionButton, mentalStress && styles.conditionActive]} onPress={() => setMentalStress(!mentalStress)}>
-          <Text style={[styles.conditionText, mentalStress && styles.conditionTextActive]}>🧠 Mental Health Support</Text>
+          <Text style={[styles.conditionText, mentalStress && styles.conditionTextActive]}>?? Mental Health Support</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>⚽ Player Attributes</Text>
+      <Text style={styles.sectionTitle}>? Player Attributes</Text>
       
-      <Text style={styles.categoryTitle}>🏃 Pace</Text>
+      <Text style={styles.categoryTitle}>?? Pace</Text>
       <DraggableSlider attr="acceleration" value={attrs.acceleration} onValueChange={(value) => setAttrs({ ...attrs, acceleration: value })} />
       <DraggableSlider attr="sprintSpeed" value={attrs.sprintSpeed} onValueChange={(value) => setAttrs({ ...attrs, sprintSpeed: value })} />
 
-      <Text style={styles.categoryTitle}>⚽ Shooting</Text>
+      <Text style={styles.categoryTitle}>? Shooting</Text>
       <DraggableSlider attr="finishing" value={attrs.finishing} onValueChange={(value) => setAttrs({ ...attrs, finishing: value })} />
       <DraggableSlider attr="shotPower" value={attrs.shotPower} onValueChange={(value) => setAttrs({ ...attrs, shotPower: value })} />
       <DraggableSlider attr="longShots" value={attrs.longShots} onValueChange={(value) => setAttrs({ ...attrs, longShots: value })} />
       <DraggableSlider attr="volleys" value={attrs.volleys} onValueChange={(value) => setAttrs({ ...attrs, volleys: value })} />
       <DraggableSlider attr="penalties" value={attrs.penalties} onValueChange={(value) => setAttrs({ ...attrs, penalties: value })} />
 
-      <Text style={styles.categoryTitle}>🎯 Passing</Text>
+      <Text style={styles.categoryTitle}>?? Passing</Text>
       <DraggableSlider attr="vision" value={attrs.vision} onValueChange={(value) => setAttrs({ ...attrs, vision: value })} />
       <DraggableSlider attr="crossing" value={attrs.crossing} onValueChange={(value) => setAttrs({ ...attrs, crossing: value })} />
       <DraggableSlider attr="shortPassing" value={attrs.shortPassing} onValueChange={(value) => setAttrs({ ...attrs, shortPassing: value })} />
       <DraggableSlider attr="longPassing" value={attrs.longPassing} onValueChange={(value) => setAttrs({ ...attrs, longPassing: value })} />
       <DraggableSlider attr="curve" value={attrs.curve} onValueChange={(value) => setAttrs({ ...attrs, curve: value })} />
 
-      <Text style={styles.categoryTitle}>🎨 Dribbling</Text>
+      <Text style={styles.categoryTitle}>?? Dribbling</Text>
       <DraggableSlider attr="agility" value={attrs.agility} onValueChange={(value) => setAttrs({ ...attrs, agility: value })} />
       <DraggableSlider attr="balance" value={attrs.balance} onValueChange={(value) => setAttrs({ ...attrs, balance: value })} />
       <DraggableSlider attr="reactions" value={attrs.reactions} onValueChange={(value) => setAttrs({ ...attrs, reactions: value })} />
@@ -376,20 +376,20 @@ const ProfileForm = () => {
       <DraggableSlider attr="dribbling" value={attrs.dribbling} onValueChange={(value) => setAttrs({ ...attrs, dribbling: value })} />
       <DraggableSlider attr="composure" value={attrs.composure} onValueChange={(value) => setAttrs({ ...attrs, composure: value })} />
 
-      <Text style={styles.categoryTitle}>🛡️ Defending</Text>
+      <Text style={styles.categoryTitle}>??? Defending</Text>
       <DraggableSlider attr="interceptions" value={attrs.interceptions} onValueChange={(value) => setAttrs({ ...attrs, interceptions: value })} />
       <DraggableSlider attr="headingAccuracy" value={attrs.headingAccuracy} onValueChange={(value) => setAttrs({ ...attrs, headingAccuracy: value })} />
       <DraggableSlider attr="marking" value={attrs.marking} onValueChange={(value) => setAttrs({ ...attrs, marking: value })} />
       <DraggableSlider attr="standingTackle" value={attrs.standingTackle} onValueChange={(value) => setAttrs({ ...attrs, standingTackle: value })} />
       <DraggableSlider attr="slidingTackle" value={attrs.slidingTackle} onValueChange={(value) => setAttrs({ ...attrs, slidingTackle: value })} />
 
-      <Text style={styles.categoryTitle}>💪 Physical</Text>
+      <Text style={styles.categoryTitle}>?? Physical</Text>
       <DraggableSlider attr="jumping" value={attrs.jumping} onValueChange={(value) => setAttrs({ ...attrs, jumping: value })} />
       <DraggableSlider attr="stamina" value={attrs.stamina} onValueChange={(value) => setAttrs({ ...attrs, stamina: value })} />
       <DraggableSlider attr="strength" value={attrs.strength} onValueChange={(value) => setAttrs({ ...attrs, strength: value })} />
       <DraggableSlider attr="aggression" value={attrs.aggression} onValueChange={(value) => setAttrs({ ...attrs, aggression: value })} />
 
-      <Text style={styles.categoryTitle}>🥅 Goalkeeping</Text>
+      <Text style={styles.categoryTitle}>?? Goalkeeping</Text>
       <DraggableSlider attr="diving" value={attrs.diving} onValueChange={(value) => setAttrs({ ...attrs, diving: value })} />
       <DraggableSlider attr="handling" value={attrs.handling} onValueChange={(value) => setAttrs({ ...attrs, handling: value })} />
       <DraggableSlider attr="kicking" value={attrs.kicking} onValueChange={(value) => setAttrs({ ...attrs, kicking: value })} />
@@ -398,13 +398,13 @@ const ProfileForm = () => {
 
       {cardData && (
         <View style={styles.previewSection}>
-          <Text style={styles.sectionTitle}>🎴 Live Preview</Text>
+          <Text style={styles.sectionTitle}>?? Live Preview</Text>
           <PlayerCard data={cardData} />
         </View>
       )}
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitText}>🚀 Generate Player Card</Text>
+        <Text style={styles.submitText}>?? Generate Player Card</Text>
       </TouchableOpacity>
 
       <Modal visible={showCountryPicker} animationType="slide" transparent onRequestClose={() => setShowCountryPicker(false)}>
@@ -412,7 +412,7 @@ const ProfileForm = () => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Country</Text>
-              <TouchableOpacity onPress={() => setShowCountryPicker(false)}><Text style={styles.closeButton}>✕</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowCountryPicker(false)}><Text style={styles.closeButton}>?</Text></TouchableOpacity>
             </View>
             <TextInput style={styles.searchInput} placeholder="Search country..." value={countrySearch} onChangeText={setCountrySearch} autoFocus />
             <FlatList

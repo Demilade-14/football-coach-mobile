@@ -1,6 +1,6 @@
-﻿// app/HallOfFame.js
+// app/HallOfFame.js
 import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { getAllPlayers, deletePlayer, getTotalPlayersCount } from './utils/playerDatabase';
+import { getAllPlayers, deletePlayer, getTotalPlayersCount } from '../src/utils/playerDatabase';
 

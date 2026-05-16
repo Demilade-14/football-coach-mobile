@@ -1,4 +1,4 @@
-﻿// app/VIPChat.js - Real AI Coach powered by Claude API
+// app/VIPChat.js - Real AI Coach powered by Claude API
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
@@ -27,7 +27,7 @@ Your personality:
 - Warm, encouraging, and deeply knowledgeable
 - You speak with authority but never arrogance
 - You use football terminology correctly and naturally
-- You're empathetic — acknowledge feelings FIRST before giving advice
+- You're empathetic � acknowledge feelings FIRST before giving advice
 - You celebrate wins (big and small) enthusiastically
 - You use emojis naturally but not excessively (max 2-3 per message)
 - You ask smart follow-up questions for personalized advice
@@ -35,7 +35,7 @@ Your personality:
 Your expertise covers:
 - Technical: passing, shooting, dribbling, first touch, crossing, heading, set pieces, weak foot
 - Tactical: formations, positioning, pressing, transitions, game reading, off-the-ball movement
-- Positions: GK, CB, FB, CDM, CM, CAM, winger, striker — deep specific knowledge of each
+- Positions: GK, CB, FB, CDM, CM, CAM, winger, striker � deep specific knowledge of each
 - Physical: fitness, agility, speed, strength, injury prevention, recovery, stretching
 - Mental: confidence, focus, game nerves, leadership, resilience, visualization, pre-match routines
 - Nutrition and recovery science specifically for footballers
@@ -45,7 +45,7 @@ Your expertise covers:
 - Video analysis and what to watch in professional games to learn
 
 Rules:
-- ALWAYS give specific, actionable advice — never vague or generic tips
+- ALWAYS give specific, actionable advice � never vague or generic tips
 - For skill questions: provide a concrete drill with reps/sets/duration
 - For mental questions: give specific psychological techniques with steps
 - Keep responses focused and under 200 words unless a detailed breakdown is truly needed
@@ -59,14 +59,14 @@ Rules:
 // QUICK ACTION PROMPTS
 // ============================================================
 const QUICK_ACTIONS = [
-  { icon: '⚽', label: 'Shooting drill', prompt: 'Give me a specific shooting drill I can do alone today' },
-  { icon: '🎯', label: 'Passing tips', prompt: 'How can I improve my passing accuracy under pressure?' },
-  { icon: '🧠', label: 'Mental game', prompt: 'I get very nervous before big matches. How do I stay calm and perform my best?' },
-  { icon: '🏃', label: 'Fitness plan', prompt: 'Give me a football-specific fitness plan I can do this week' },
-  { icon: '🛡️', label: 'Defending', prompt: 'How do I improve my 1v1 defending? I keep getting beaten by fast attackers' },
-  { icon: '🌪️', label: 'Dribbling', prompt: 'What are the best dribbling drills to help me beat defenders?' },
-  { icon: '📋', label: 'Get scouted', prompt: 'What do I need to do to get noticed by scouts and coaches?' },
-  { icon: '💪', label: 'Weak foot', prompt: 'My weak foot is really bad. Give me a programme to improve it in 4 weeks' },
+  { icon: '?', label: 'Shooting drill', prompt: 'Give me a specific shooting drill I can do alone today' },
+  { icon: '??', label: 'Passing tips', prompt: 'How can I improve my passing accuracy under pressure?' },
+  { icon: '??', label: 'Mental game', prompt: 'I get very nervous before big matches. How do I stay calm and perform my best?' },
+  { icon: '??', label: 'Fitness plan', prompt: 'Give me a football-specific fitness plan I can do this week' },
+  { icon: '???', label: 'Defending', prompt: 'How do I improve my 1v1 defending? I keep getting beaten by fast attackers' },
+  { icon: '???', label: 'Dribbling', prompt: 'What are the best dribbling drills to help me beat defenders?' },
+  { icon: '??', label: 'Get scouted', prompt: 'What do I need to do to get noticed by scouts and coaches?' },
+  { icon: '??', label: 'Weak foot', prompt: 'My weak foot is really bad. Give me a programme to improve it in 4 weeks' },
 ];
 
 // ============================================================
@@ -104,7 +104,7 @@ const TypingDots = () => {
   return (
     <View style={styles.typingContainer}>
       <View style={styles.typingAvatar}>
-        <Text style={styles.avatarEmoji}>🤖</Text>
+        <Text style={styles.avatarEmoji}>??</Text>
       </View>
       <View style={styles.typingBubble}>
         <Text style={styles.typingLabel}>Coach AI is thinking...</Text>
@@ -141,7 +141,7 @@ const MessageBubble = ({ item }) => {
     ]}>
       {!isPlayer && (
         <View style={styles.coachAvatar}>
-          <Text style={styles.avatarEmoji}>🤖</Text>
+          <Text style={styles.avatarEmoji}>??</Text>
         </View>
       )}
       <View style={[styles.messageBubble, isPlayer ? styles.playerBubble : styles.coachBubble]}>
@@ -155,7 +155,7 @@ const MessageBubble = ({ item }) => {
       </View>
       {isPlayer && (
         <View style={styles.playerAvatar}>
-          <Text style={styles.avatarEmoji}>⚽</Text>
+          <Text style={styles.avatarEmoji}>?</Text>
         </View>
       )}
     </Animated.View>
@@ -201,7 +201,7 @@ export default function VIPChat() {
         setIsVIP(true);
       } else {
         Alert.alert(
-          '✨ Premium Feature',
+          '? Premium Feature',
           'Upgrade to VIP for unlimited AI coaching sessions!',
           [
             { text: 'Not Now', onPress: () => router.back(), style: 'cancel' },
@@ -247,7 +247,7 @@ export default function VIPChat() {
   const sendWelcomeMessage = () => {
     const welcome = {
       id: 'welcome',
-      text: `Hey ${userName}! 👋 I'm Coach AI — your personal football coach.\n\nI can help you with:\n• Skill drills & technique\n• Tactics & positioning\n• Mental game & confidence\n• Fitness & recovery\n• Getting scouted\n\nTap a quick start below or ask me anything!`,
+      text: `Hey ${userName}! ?? I'm Coach AI � your personal football coach.\n\nI can help you with:\n� Skill drills & technique\n� Tactics & positioning\n� Mental game & confidence\n� Fitness & recovery\n� Getting scouted\n\nTap a quick start below or ask me anything!`,
       sender: 'Coach',
       timestamp: new Date().toISOString(),
     };
@@ -260,7 +260,7 @@ export default function VIPChat() {
     } catch (e) {}
   };
 
-  // ── CALL CLAUDE API ──
+  // -- CALL CLAUDE API --
   const callClaudeAPI = async (userMessage, history) => {
     if (!CLAUDE_API_KEY) {
       throw new Error('NO_API_KEY');
@@ -297,7 +297,7 @@ export default function VIPChat() {
     };
   };
 
-  // ── SEND MESSAGE ──
+  // -- SEND MESSAGE --
   const sendMessage = useCallback(async (overrideText) => {
     const text = (overrideText || inputText).trim();
     if (!text || isTyping) return;
@@ -336,7 +336,7 @@ export default function VIPChat() {
       const coachMsg = {
         id: (Date.now() + 1).toString(),
         text: isNoKey
-          ? `⚠️ API key not set up yet.\n\nTo enable real AI responses, add your Anthropic API key to your .env file:\n\nEXPO_PUBLIC_CLAUDE_API_KEY=sk-ant-...`
+          ? `?? API key not set up yet.\n\nTo enable real AI responses, add your Anthropic API key to your .env file:\n\nEXPO_PUBLIC_CLAUDE_API_KEY=sk-ant-...`
           : `Sorry, I couldn't connect right now. Please check your internet and try again.\n\nError: ${error.message}`,
         sender: 'Coach',
         timestamp: new Date().toISOString(),
@@ -362,7 +362,7 @@ export default function VIPChat() {
     ]);
   };
 
-  // ── LOADING ──
+  // -- LOADING --
   if (checkingVIP) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -382,29 +382,29 @@ export default function VIPChat() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      {/* ── HEADER ── */}
+      {/* -- HEADER -- */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-          <Text style={styles.backArrow}>←</Text>
+          <Text style={styles.backArrow}>?</Text>
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
           <View style={styles.headerAvatarWrap}>
-            <Text style={styles.headerAvatar}>🤖</Text>
+            <Text style={styles.headerAvatar}>??</Text>
             <View style={styles.onlineDot} />
           </View>
           <View>
             <Text style={styles.headerTitle}>Coach AI</Text>
-            <Text style={styles.headerSub}>⚡ Premium · Always Available</Text>
+            <Text style={styles.headerSub}>? Premium � Always Available</Text>
           </View>
         </View>
 
         <TouchableOpacity onPress={clearChat} style={styles.headerBtn}>
-          <Text style={styles.headerBtnIcon}>↺</Text>
+          <Text style={styles.headerBtnIcon}>?</Text>
         </TouchableOpacity>
       </View>
 
-      {/* ── MESSAGES LIST ── */}
+      {/* -- MESSAGES LIST -- */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -415,7 +415,7 @@ export default function VIPChat() {
         ListFooterComponent={isTyping ? <TypingDots /> : null}
       />
 
-      {/* ── QUICK ACTIONS ── */}
+      {/* -- QUICK ACTIONS -- */}
       {showQuickActions && (
         <View style={styles.quickSection}>
           <Text style={styles.quickTitle}>QUICK START</Text>
@@ -441,7 +441,7 @@ export default function VIPChat() {
         </View>
       )}
 
-      {/* ── INPUT ── */}
+      {/* -- INPUT -- */}
       <View style={styles.inputSection}>
         <View style={styles.inputRow}>
           <TextInput
@@ -465,12 +465,12 @@ export default function VIPChat() {
           >
             {isTyping
               ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={styles.sendIcon}>▶</Text>
+              : <Text style={styles.sendIcon}>?</Text>
             }
           </TouchableOpacity>
         </View>
         <Text style={styles.sessionInfo}>
-          🤖 Claude AI · {sessionCount} exchange{sessionCount !== 1 ? 's' : ''} this session
+          ?? Claude AI � {sessionCount} exchange{sessionCount !== 1 ? 's' : ''} this session
         </Text>
       </View>
     </KeyboardAvoidingView>

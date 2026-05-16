@@ -1,9 +1,9 @@
-﻿// app/PositionQuiz.js
+// app/PositionQuiz.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-// ✅ Import interstitial ad hook (create this file if missing)
-import { useInterstitialAd } from './hooks/useInterstitialAd';
+// ? Import interstitial ad hook (create this file if missing)
+import { useInterstitialAd } from '../src/hooks/useInterstitialAd';
 
 const PositionQuiz = () => {
   const router = useRouter();
@@ -143,7 +143,7 @@ const PositionQuiz = () => {
         const entries = Object.entries(finalAnswers || {});
         
         if (!entries || entries.length === 0) {
-          Alert.alert('⚠️ No Result', 'Could not determine a position.', [
+          Alert.alert('?? No Result', 'Could not determine a position.', [
             { text: 'Retake Quiz', onPress: resetQuiz }
           ]);
           setIsCalculating(false);
@@ -155,14 +155,14 @@ const PositionQuiz = () => {
         
         const results = sorted.map(([key, score], index) => {
           const name = getPositionName(key);
-          const emoji = ['🥇', '🥈', '🥉'][index];
+          const emoji = ['??', '??', '??'][index];
           return `${emoji} ${name} (${score} pts)`;
         });
 
-        while (results.length < 3) results.push('—');
+        while (results.length < 3) results.push('�');
 
         Alert.alert(
-          '🎯 Your Ideal Positions!',
+          '?? Your Ideal Positions!',
           results.join('\n') + '\n\nThese positions match your playing style best!',
           [
             {
@@ -177,7 +177,7 @@ const PositionQuiz = () => {
                   try {
                     router.push('/ProfileForm');
                   } catch (err) {
-                    console.error('❌ Navigation failed:', err);
+                    console.error('? Navigation failed:', err);
                     Alert.alert('Error', 'Profile form not found.');
                   }
                 }, 600);
@@ -193,7 +193,7 @@ const PositionQuiz = () => {
           { cancelable: false, onDismiss: () => setIsCalculating(false) }
         );
       } catch (error) {
-        console.error('💥 showResults error:', error);
+        console.error('?? showResults error:', error);
         Alert.alert('Error', 'Something went wrong. Please try again.', [
           { text: 'Retake Quiz', onPress: resetQuiz }
         ]);
@@ -208,9 +208,9 @@ const PositionQuiz = () => {
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} disabled={isCalculating}>
-          <Text style={[styles.backButton, isCalculating && styles.disabled]}>← Back</Text>
+          <Text style={[styles.backButton, isCalculating && styles.disabled]}>? Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>🎯 Find My Position</Text>
+        <Text style={styles.title}>?? Find My Position</Text>
         <Text style={styles.subtitle}>Discover your ideal playing position</Text>
       </View>
 

@@ -1,10 +1,10 @@
-﻿// app/TrainingPlanScreen.js
+// app/TrainingPlanScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-// ⚠️ Update path if your file is named differently
-import { createTrainingPlan, estimateWeeksToGoal, recommendIntensity } from './utils/TrainingEngine';
-import AdBanner from './components/AdBanner';
+// ?? Update path if your file is named differently
+import { createTrainingPlan, estimateWeeksToGoal, recommendIntensity } from '../src/utils/TrainingEngine';
+import AdBanner from '../src/components/AdBanner';
 
 const TrainingPlanScreen = () => {
   const router = useRouter();
@@ -138,7 +138,7 @@ const TrainingPlanScreen = () => {
           <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>? Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -150,14 +150,14 @@ const TrainingPlanScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-            <Text style={styles.backText}>← Back</Text>
+            <Text style={styles.backText}>? Back</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>📋 Training Plan</Text>
+          <Text style={styles.title}>?? Training Plan</Text>
           <Text style={styles.subtitle}>Build your custom 12-week program</Text>
         </View>
 
         {/* Intensity Selection */}
-        <Text style={styles.sectionTitle}>🎯 Training Intensity</Text>
+        <Text style={styles.sectionTitle}>?? Training Intensity</Text>
         <View style={styles.intensityGrid}>
           {intensityOptions.map((opt) => (
             <TouchableOpacity
@@ -176,7 +176,7 @@ const TrainingPlanScreen = () => {
         </View>
 
         {/* Weakness Selection */}
-        <Text style={styles.sectionTitle}>⚠️ Areas to Improve</Text>
+        <Text style={styles.sectionTitle}>?? Areas to Improve</Text>
         <View style={styles.weaknessGrid}>
           {weaknessOptions.map((weak) => (
             <TouchableOpacity
@@ -195,7 +195,7 @@ const TrainingPlanScreen = () => {
                 Est. improvement: {Math.round((99 - weak.current) * 0.3)} pts
               </Text>
               {selectedWeaknesses.includes(weak.key) && (
-                <Text style={styles.checkmark}>✓ Selected</Text>
+                <Text style={styles.checkmark}>? Selected</Text>
               )}
             </TouchableOpacity>
           ))}
@@ -208,7 +208,7 @@ const TrainingPlanScreen = () => {
           disabled={loading || selectedWeaknesses.length === 0}
         >
           <Text style={styles.generateButtonText}>
-            {loading ? 'Generating...' : '🚀 Generate My Plan'}
+            {loading ? 'Generating...' : '?? Generate My Plan'}
           </Text>
         </TouchableOpacity>
 
@@ -225,14 +225,14 @@ const TrainingPlanScreen = () => {
                 onPress={() => setShowPreview(false)}
                 style={styles.closeButton}
               >
-                <Text style={styles.closeText}>✕ Close</Text>
+                <Text style={styles.closeText}>? Close</Text>
               </TouchableOpacity>
 
               <Text style={styles.planTitle}>{plan?.name || 'Your Training Plan'}</Text>
               <Text style={styles.planSubtitle}>{weeksToGoal}-Week Progression</Text>
 
               {/* Estimated Gains */}
-              <Text style={styles.gainsTitle}>📈 Estimated Gains</Text>
+              <Text style={styles.gainsTitle}>?? Estimated Gains</Text>
               {plan?.estimatedGains && Object.entries(plan.estimatedGains).map(([attr, gains]) => (
                 <View key={attr} style={styles.gainCard}>
                   <Text style={styles.gainAttr}>
@@ -250,7 +250,7 @@ const TrainingPlanScreen = () => {
                     />
                   </View>
                   <Text style={styles.gainText}>
-                    {gains.from} → {gains.to} (+{gains.gain})
+                    {gains.from} ? {gains.to} (+{gains.gain})
                   </Text>
                 </View>
               ))}
@@ -260,7 +260,7 @@ const TrainingPlanScreen = () => {
                 onPress={startTraining}
                 style={styles.startButton}
               >
-                <Text style={styles.startButtonText}>🚀 Start Training</Text>
+                <Text style={styles.startButtonText}>?? Start Training</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

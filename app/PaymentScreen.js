@@ -1,8 +1,8 @@
-﻿// app/PaymentScreen.js
+// app/PaymentScreen.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { startCheckout } from './utils/stripePayment';
+import { startCheckout } from '../src/utils/stripePayment';
 
 const PaymentScreen = () => {
   const router = useRouter();
@@ -43,7 +43,7 @@ const PaymentScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>💳 Complete Payment</Text>
+        <Text style={styles.title}>?? Complete Payment</Text>
         <Text style={styles.subtitle}>Secure checkout for VIP access</Text>
       </View>
 
@@ -55,10 +55,10 @@ const PaymentScreen = () => {
         </View>
 
         <View style={styles.securityInfo}>
-          <Text style={styles.securityTitle}>🔒 Secure Payment</Text>
-          <Text style={styles.securityText}>• All transactions are encrypted</Text>
-          <Text style={styles.securityText}>• No card details stored on our servers</Text>
-          <Text style={styles.securityText}>• Cancel anytime from Settings</Text>
+          <Text style={styles.securityTitle}>?? Secure Payment</Text>
+          <Text style={styles.securityText}>� All transactions are encrypted</Text>
+          <Text style={styles.securityText}>� No card details stored on our servers</Text>
+          <Text style={styles.securityText}>� Cancel anytime from Settings</Text>
         </View>
 
         {loading ? (

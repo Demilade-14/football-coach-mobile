@@ -1,9 +1,9 @@
-﻿// app/WeaknessScreen.js
+// app/WeaknessScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-// ⚠️ Update path if your file is named playerDatabase.js
-import { getAllPlayers } from './utils/playerDatabase';
+// ?? Update path if your file is named playerDatabase.js
+import { getAllPlayers } from '../src/utils/playerDatabase';
 
 const WeaknessScreen = () => {
   const router = useRouter();
@@ -16,12 +16,12 @@ const WeaknessScreen = () => {
 
   // Attribute definitions with thresholds for "weak" detection
   const ATTRIBUTES = [
-    { key: 'pace', label: 'Pace', icon: '🏃', threshold: 60 },
-    { key: 'shooting', label: 'Shooting', icon: '⚽', threshold: 60 },
-    { key: 'passing', label: 'Passing', icon: '🎯', threshold: 60 },
-    { key: 'dribbling', label: 'Dribbling', icon: '🎨', threshold: 60 },
-    { key: 'defending', label: 'Defending', icon: '🛡️', threshold: 60 },
-    { key: 'physical', label: 'Physical', icon: '💪', threshold: 60 },
+    { key: 'pace', label: 'Pace', icon: '??', threshold: 60 },
+    { key: 'shooting', label: 'Shooting', icon: '?', threshold: 60 },
+    { key: 'passing', label: 'Passing', icon: '??', threshold: 60 },
+    { key: 'dribbling', label: 'Dribbling', icon: '??', threshold: 60 },
+    { key: 'defending', label: 'Defending', icon: '???', threshold: 60 },
+    { key: 'physical', label: 'Physical', icon: '??', threshold: 60 },
   ];
 
   useEffect(() => {
@@ -95,12 +95,12 @@ const WeaknessScreen = () => {
 
   const getTrainingTip = (weakness) => {
     const tips = {
-      pace: '🏃 Sprint intervals: 30s max effort, 90s rest x 8 rounds',
-      shooting: '⚽ Wall finishing: 20 reps each corner, focus on placement',
-      passing: '🎯 Target passing: Hit cones from 10 yards, both feet',
-      dribbling: '🎨 Cone weaves: Light touches, change of pace every 3 touches',
-      defending: '🛡️ Shadow defending: Mirror a partner\'s movements without contact',
-      physical: '💪 Core circuit: Plank, squats, lunges - 3 rounds',
+      pace: '?? Sprint intervals: 30s max effort, 90s rest x 8 rounds',
+      shooting: '? Wall finishing: 20 reps each corner, focus on placement',
+      passing: '?? Target passing: Hit cones from 10 yards, both feet',
+      dribbling: '?? Cone weaves: Light touches, change of pace every 3 touches',
+      defending: '??? Shadow defending: Mirror a partner\'s movements without contact',
+      physical: '?? Core circuit: Plank, squats, lunges - 3 rounds',
     };
     return tips[weakness.key] || 'Focus on consistent practice!';
   };
@@ -122,14 +122,14 @@ const WeaknessScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backText}>← Back</Text>
+            <Text style={styles.backText}>? Back</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>🔍 {selectedPlayer.name}'s Weaknesses</Text>
+          <Text style={styles.title}>?? {selectedPlayer.name}'s Weaknesses</Text>
         </View>
 
         {/* Summary */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>📊 Analysis Summary</Text>
+          <Text style={styles.summaryTitle}>?? Analysis Summary</Text>
           <Text style={styles.summaryText}>
             Found {weaknesses.length} area{weaknesses.length !== 1 ? 's' : ''} for improvement
           </Text>
@@ -139,7 +139,7 @@ const WeaknessScreen = () => {
         </View>
 
         {/* Weakness List */}
-        <Text style={styles.sectionTitle}>🎯 Areas to Improve</Text>
+        <Text style={styles.sectionTitle}>?? Areas to Improve</Text>
         {weaknesses.map((weak, index) => (
           <View key={index} style={styles.weaknessCard}>
             <View style={styles.weaknessHeader}>
@@ -147,7 +147,7 @@ const WeaknessScreen = () => {
               <View style={styles.weaknessInfo}>
                 <Text style={styles.weaknessName}>{weak.label}</Text>
                 <Text style={styles.weaknessValue}>
-                  Current: {weak.value} → Target: {weak.threshold}
+                  Current: {weak.value} ? Target: {weak.threshold}
                 </Text>
               </View>
               <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(weak.priority) }]}>
@@ -170,7 +170,7 @@ const WeaknessScreen = () => {
             </View>
             
             <View style={styles.tipBox}>
-              <Text style={styles.tipLabel}>💡 Quick Drill:</Text>
+              <Text style={styles.tipLabel}>?? Quick Drill:</Text>
               <Text style={styles.tipText}>{getTrainingTip(weak)}</Text>
             </View>
           </View>
@@ -200,7 +200,7 @@ const WeaknessScreen = () => {
             );
           }}
         >
-          <Text style={styles.actionButtonText}>🚀 Create Training Plan</Text>
+          <Text style={styles.actionButtonText}>?? Create Training Plan</Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -210,14 +210,14 @@ const WeaknessScreen = () => {
   if (selectedPlayer && weaknesses.length === 0) {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.center}>
-        <Text style={styles.emptyIcon}>🎉</Text>
+        <Text style={styles.emptyIcon}>??</Text>
         <Text style={styles.emptyTitle}>All Stats Looking Great!</Text>
         <Text style={styles.emptyText}>
           {selectedPlayer.name} has no significant weaknesses. 
           Keep up the excellent work!
         </Text>
         <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
-          <Text style={styles.secondaryButtonText}>← View Another Player</Text>
+          <Text style={styles.secondaryButtonText}>? View Another Player</Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -229,16 +229,16 @@ const WeaknessScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>? Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>🔍 Find Weaknesses</Text>
+        <Text style={styles.title}>?? Find Weaknesses</Text>
         <Text style={styles.subtitle}>Select a player to analyze</Text>
       </View>
 
       {/* Player List */}
       {players.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📭</Text>
+          <Text style={styles.emptyIcon}>??</Text>
           <Text style={styles.emptyText}>No players found</Text>
           <Text style={styles.emptySubtext}>Create a player in Profile to get started</Text>
           <TouchableOpacity 
@@ -264,7 +264,7 @@ const WeaknessScreen = () => {
                   <Text style={styles.playerName}>{player.name}</Text>
                   {highPriority > 0 && (
                     <View style={styles.alertBadge}>
-                      <Text style={styles.alertText}>⚠️ {highPriority}</Text>
+                      <Text style={styles.alertText}>?? {highPriority}</Text>
                     </View>
                   )}
                 </View>
@@ -281,7 +281,7 @@ const WeaknessScreen = () => {
                     {playerWeaknesses.length} area{playerWeaknesses.length !== 1 ? 's' : ''} to improve
                   </Text>
                 ) : (
-                  <Text style={styles.noWeaknesses}>✅ All stats balanced</Text>
+                  <Text style={styles.noWeaknesses}>? All stats balanced</Text>
                 )}
               </TouchableOpacity>
             );
