@@ -179,3 +179,23 @@ export const calculateOverall = (stats) => {
   const avg = values.reduce((a, b) => a + b, 0) / values.length;
   return Math.round(Math.min(99, Math.max(1, avg)));
 };
+export const recommendPosition = (stats) => {
+  if (!stats || typeof stats !== "object") return "Midfielder";
+  const { pace = 50, shooting = 50, passing = 50, defending = 50, physical = 50, dribbling = 50 } = stats;
+  if (defending > 75 && physical > 70) return "Defender";
+  if (pace > 80 && shooting > 75) return "Forward";
+  if (passing > 75 && dribbling > 70) return "Midfielder";
+  if (pace > 85) return "Winger";
+  if (shooting > 80) return "Striker";
+  return "Midfielder";
+};
+export const recommendPosition = (stats) => {
+  if (!stats || typeof stats !== "object") return "Midfielder";
+  const { pace = 50, shooting = 50, passing = 50, defending = 50, physical = 50, dribbling = 50 } = stats;
+  if (defending > 75 && physical > 70) return "Defender";
+  if (pace > 80 && shooting > 75) return "Forward";
+  if (passing > 75 && dribbling > 70) return "Midfielder";
+  if (pace > 85) return "Winger";
+  if (shooting > 80) return "Striker";
+  return "Midfielder";
+};
