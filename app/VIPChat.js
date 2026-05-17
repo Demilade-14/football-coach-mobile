@@ -11,7 +11,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 const { width } = Dimensions.get('window');
 // ? Your Gemini API Key
-const GEMINI_API_KEY = 'AIzaSyAF6bWgc-nxtKkaSkHCT5i-EGYjtrV_3tQ';
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 // System prompt for football coaching personality
 const SYSTEM_PROMPT = `You are Coach AI, an elite football (soccer) coach with 20+ years of professional experience. You've coached in the Premier League, La Liga, and Champions League.
 **Your Style:**
