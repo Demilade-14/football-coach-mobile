@@ -1,82 +1,60 @@
-﻿// app/ProgressScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+﻿import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 export default function ProgressScreen() {
   const router = useRouter();
-  const { playerData, plan, data } = useLocalSearchParams();
-  
+  const [loading, setLoading] = useState(true);
   const [player, setPlayer] = useState(null);
   const [trainingPlan, setTrainingPlan] = useState(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [completedSessions, setCompletedSessions] = useState({});
   const [progressData, setProgressData] = useState({});
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        let playerObj = null;
-        let planObj = null;
-
-        // Try to get data from params
-        if (playerData && plan) {
-          playerObj = JSON.parse(playerData);
-          planObj = JSON.parse(plan);
-        } else if (data) {
-          playerObj = JSON.parse(data);
-        } else {
-          // Try to load from AsyncStorage
-          const savedPlayer = await AsyncStorage.getItem('trainingPlayerData');
-          const savedPlan = await AsyncStorage.getItem('currentTrainingPlan');
-          
-          if (savedPlayer) playerObj = JSON.parse(savedPlayer);
-          if (savedPlan) planObj = JSON.parse(savedPlan);
+    loadData();
+  }, []);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      // Load current training plan
+      const savedPlan = await AsyncStorage.getItem('currentTrainingPlan');
+      const savedPlayer = await AsyncStorage.getItem('trainingPlayerData');
+      const savedProgress = await AsyncStorage.getItem('trainingProgress');
+      if (savedPlan) {
+        const plan = JSON.parse(savedPlan);
+        setTrainingPlan(plan);
+        if (savedPlayer) {
+          setPlayer(JSON.parse(savedPlayer));
         }
-
-        if (playerObj) {
-          setPlayer(playerObj);
-          
-          // Initialize progress data
-          const attrs = playerObj.attrs || playerObj;
+        // Initialize progress data from plan
+        if (plan.focus && plan.focus.length > 0) {
           const initialProgress = {};
-          Object.keys(attrs).forEach(attr => {
-            initialProgress[attr] = {
-              initial: attrs[attr] || 0,
-              current: attrs[attr] || 0,
-              logs: [],
+          plan.focus.forEach(f => {
+            const currentValue = player?.attrs?.[f.key] || f.value || 50;
+            initialProgress[f.key] = {
+              initial: currentValue,
+              current: currentValue,
+              target: Math.min(99, currentValue + 15),
+              logs: []
             };
           });
           setProgressData(initialProgress);
         }
-
-        if (planObj) {
-          setTrainingPlan(planObj);
-        }
-
-        // Load saved progress
-        const savedProgress = await AsyncStorage.getItem('trainingProgress');
-        if (savedProgress) {
-          const progress = JSON.parse(savedProgress);
-          setCompletedSessions(progress.completedSessions || {});
-          setCurrentWeek(progress.currentWeek || 1);
-          if (progress.progressData) {
-            setProgressData(progress.progressData);
-          }
-        }
-
-      } catch (error) {
-        console.error('Error loading progress data:', error);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    loadData();
-  }, [playerData, plan, data]);
-
+      if (savedProgress) {
+        const progress = JSON.parse(savedProgress);
+        setCompletedSessions(progress.completedSessions || {});
+        setCurrentWeek(progress.currentWeek || 1);
+        if (progress.progressData) {
+          setProgressData(progress.progressData);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading progress:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const saveProgress = async () => {
     try {
       const progressToSave = {
@@ -90,101 +68,81 @@ export default function ProgressScreen() {
       console.error('Error saving progress:', error);
     }
   };
-
   const completeSession = (week) => {
     if (!trainingPlan || !trainingPlan.schedule) return;
-
     const weekPlan = trainingPlan.schedule[week - 1];
     if (!weekPlan) return;
-
     // Mark session as completed
-    const newCompletedSessions = {
-      ...completedSessions,
-      [week]: true,
-    };
+    const newCompletedSessions = { ...completedSessions, [week]: true };
     setCompletedSessions(newCompletedSessions);
-
-    // Update progress for focused attribute
+    // Update progress
     const updatedProgress = { ...progressData };
     const attr = weekPlan.focus.key;
-    
     if (updatedProgress[attr]) {
       const oldValue = updatedProgress[attr].current;
-      const improvement = trainingPlan.intensity === 'light' ? 0.5 : 
-                         trainingPlan.intensity === 'moderate' ? 1 : 
-                         trainingPlan.intensity === 'intense' ? 1.5 : 2;
-      
+      const improvement = weekPlan.intensity === 'light' ? 1 : 
+                         weekPlan.intensity === 'moderate' ? 2 : 3;
       const newValue = Math.min(99, oldValue + improvement);
-      updatedProgress[attr].current = newValue;
-      updatedProgress[attr].logs.push({
-        week,
-        improvement,
-        date: new Date().toISOString()
-      });
+      updatedProgress[attr] = {
+        ...updatedProgress[attr],
+        current: newValue,
+        logs: [...(updatedProgress[attr].logs || []), {
+          week,
+          improvement,
+          date: new Date().toISOString()
+        }]
+      };
     }
-
     setProgressData(updatedProgress);
     saveProgress();
-
-    Alert.alert('Session Complete!', `Week ${week} training completed. Keep it up!`);
+    Alert.alert(
+      '🎉 Week Complete!', 
+      `Great job completing Week ${week}!\n\nImprovement: +${trainingPlan.schedule[week-1].intensity === 'light' ? 1 : trainingPlan.schedule[week-1].intensity === 'moderate' ? 2 : 3} points`,
+      [{ text: 'Awesome!' }]
+    );
   };
-
-  const getOverallImprovement = () => {
-    let totalImprovement = 0;
-    Object.keys(progressData).forEach(attr => {
-      totalImprovement += progressData[attr].current - progressData[attr].initial;
-    });
-    return Math.round(totalImprovement * 10) / 10;
-  };
-
   const getCompletionPercentage = () => {
     if (!trainingPlan || !trainingPlan.schedule) return 0;
     const totalSessions = trainingPlan.schedule.length;
     const completed = Object.keys(completedSessions).length;
     return Math.round((completed / totalSessions) * 100);
   };
-
   if (loading) {
     return (
       <View style={styles.center}>
+        <ActivityIndicator color="#ffd700" size="large" />
         <Text style={styles.loadingText}>Loading progress...</Text>
       </View>
     );
   }
-
-  if (!player) {
+  if (!trainingPlan) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>ðŸ“Š Track Progress</Text>
+      <ScrollView style={styles.container}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backText}>⬅️ Back</Text>
+        </TouchableOpacity>
         <View style={styles.noDataCard}>
-          <Text style={styles.noDataTitle}>No Training Plan</Text>
-          <Text style={styles.noDataText}>Create a training plan to start tracking progress</Text>
+          <Text style={styles.noDataTitle}>📋 No Training Plan</Text>
+          <Text style={styles.noDataText}>Generate a training plan to start tracking your progress</Text>
           <TouchableOpacity 
             onPress={() => router.push('/TrainingPlanScreen')} 
             style={styles.createButton}
           >
-            <Text style={styles.createButtonText}>ðŸ“‹ Create Training Plan</Text>
+            <Text style={styles.createButtonText}>🎯 Create Training Plan</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>â† Back</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     );
   }
-
-  const currentWeekPlan = trainingPlan?.schedule?.[currentWeek - 1];
+  const currentWeekPlan = trainingPlan.schedule[currentWeek - 1];
   const isWeekCompleted = completedSessions[currentWeek];
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.container}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>â† Back</Text>
+        <Text style={styles.backText}>⬅️ Back</Text>
       </TouchableOpacity>
-
-      <Text style={styles.title}>ðŸ“Š Training Progress</Text>
-      <Text style={styles.subtitle}>{player.name} - Week {currentWeek}/12</Text>
-
+      <Text style={styles.title}>📊 Training Progress</Text>
+      <Text style={styles.subtitle}>{player?.name || 'Player'} - Week {currentWeek}/12</Text>
       {/* Progress Overview */}
       <View style={styles.statsGrid}>
         <View style={styles.statCard}>
@@ -192,61 +150,47 @@ export default function ProgressScreen() {
           <Text style={styles.statValue}>{getCompletionPercentage()}%</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Improvement</Text>
-          <Text style={styles.statValue}>+{getOverallImprovement()}</Text>
-        </View>
-        <View style={styles.statCard}>
           <Text style={styles.statLabel}>Week</Text>
           <Text style={styles.statValue}>{currentWeek}/12</Text>
         </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Completed</Text>
+          <Text style={styles.statValue}>{Object.keys(completedSessions).length}/12</Text>
+        </View>
       </View>
-
       {/* Progress Bar */}
       <View style={styles.progressSection}>
         <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${getCompletionPercentage()}%` }
-            ]}
-          />
+          <View style={[styles.progressFill, { width: `${getCompletionPercentage()}%` }]} />
         </View>
         <Text style={styles.progressText}>{getCompletionPercentage()}% Complete</Text>
       </View>
-
       {/* Current Week */}
       {currentWeekPlan && (
         <View style={styles.weekSection}>
-          <Text style={styles.weekTitle}>ðŸ“… This Week's Focus</Text>
+          <Text style={styles.weekTitle}>📅 Week {currentWeek} Focus</Text>
           <View style={[styles.weekCard, isWeekCompleted && styles.weekCardCompleted]}>
-            <Text style={styles.focusAttr}>
-              {currentWeekPlan.focus.key.replace(/([A-Z])/g, ' $1').trim().toUpperCase()}
-            </Text>
+            <Text style={styles.focusAttr}>{currentWeekPlan.focus.name.toUpperCase()}</Text>
             <Text style={styles.focusLevel}>
               Current: {progressData[currentWeekPlan.focus.key]?.current || currentWeekPlan.focus.value}/99
             </Text>
-
+            <Text style={styles.intensityBadge}>
+              Intensity: {currentWeekPlan.intensity.toUpperCase()}
+            </Text>
             <Text style={styles.exercisesTitle}>This Week's Training:</Text>
             {currentWeekPlan.session.exercises.map((exercise, idx) => (
-              <Text key={idx} style={styles.exercise}>
-                â€¢ {exercise}
-              </Text>
+              <Text key={idx} style={styles.exercise}>• {exercise}</Text>
             ))}
-
             <TouchableOpacity
               onPress={() => completeSession(currentWeek)}
-              style={[
-                styles.completeButton,
-                isWeekCompleted && styles.completeButtonDone,
-              ]}
+              style={[styles.completeButton, isWeekCompleted && styles.completeButtonDone]}
               disabled={isWeekCompleted}
             >
               <Text style={styles.completeButtonText}>
-                {isWeekCompleted ? 'âœ“ Week Complete!' : 'âœ“ Complete This Week'}
+                {isWeekCompleted ? '✓ Week Complete!' : '✓ Complete This Week'}
               </Text>
             </TouchableOpacity>
           </View>
-
           {/* Week Navigation */}
           <View style={styles.weekNavigation}>
             <TouchableOpacity
@@ -254,63 +198,50 @@ export default function ProgressScreen() {
               disabled={currentWeek === 1}
               style={[styles.navButton, currentWeek === 1 && styles.navButtonDisabled]}
             >
-              <Text style={styles.navButtonText}>â† Previous</Text>
+              <Text style={styles.navButtonText}>← Previous</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               onPress={() => setCurrentWeek(Math.min(12, currentWeek + 1))}
               disabled={currentWeek === 12}
               style={[styles.navButton, currentWeek === 12 && styles.navButtonDisabled]}
             >
-              <Text style={styles.navButtonText}>Next â†’</Text>
+              <Text style={styles.navButtonText}>Next →</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
-
       {/* Attribute Progress */}
-      {trainingPlan && trainingPlan.focus && (
-        <View style={styles.attributesSection}>
-          <Text style={styles.attributesTitle}>ðŸ“ˆ Attribute Progress</Text>
-          {trainingPlan.focus.map(weakness => {
-            const prog = progressData[weakness.key];
-            if (!prog) return null;
-
-            const improvement = prog.current - prog.initial;
-            return (
-              <View key={weakness.key} style={styles.attributeCard}>
-                <View style={styles.attributeHeader}>
-                  <Text style={styles.attributeName}>
-                    {weakness.key.replace(/([A-Z])/g, ' $1').trim()}
-                  </Text>
-                  <Text style={[styles.attributeValue, improvement > 0 && styles.attributeValuePositive]}>
-                    {prog.initial} â†’ {prog.current} {improvement > 0 && `(+${improvement})`}
-                  </Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${(prog.current / 99) * 100}%` }
-                    ]}
-                  />
-                </View>
+      <View style={styles.attributesSection}>
+        <Text style={styles.attributesTitle}>📈 Attribute Progress</Text>
+        {trainingPlan.focus.map((weakness) => {
+          const prog = progressData[weakness.key];
+          if (!prog) return null;
+          const improvement = prog.current - prog.initial;
+          return (
+            <View key={weakness.key} style={styles.attributeCard}>
+              <View style={styles.attributeHeader}>
+                <Text style={styles.attributeName}>{weakness.name}</Text>
+                <Text style={[styles.attributeValue, improvement > 0 && styles.attributeValuePositive]}>
+                  {prog.initial} → {prog.current} {improvement > 0 && `(+${improvement})`}
+                </Text>
               </View>
-            );
-          })}
-        </View>
-      )}
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${(prog.current / 99) * 100}%`, backgroundColor: '#4CAF50' }]} />
+              </View>
+            </View>
+          );
+        })}
+      </View>
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0d1b2a' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d1b2a' },
-  loadingText: { color: '#a8dadc', fontSize: 16 },
-  container: { padding: 20, backgroundColor: '#0d1b2a', paddingBottom: 40 },
-  backButton: { paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#1b263b', borderRadius: 8, alignSelf: 'flex-start', marginBottom: 16 },
-  backText: { color: '#f1faee', fontSize: 14, fontWeight: '600' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#f1faee', marginBottom: 4 },
+  loadingText: { color: '#a8dadc', marginTop: 16, fontSize: 16 },
+  backButton: { padding: 12, alignSelf: 'flex-start' },
+  backText: { color: '#1e88e5', fontSize: 16, fontWeight: 'bold' },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#ffd700', marginBottom: 4 },
   subtitle: { fontSize: 16, color: '#a8dadc', marginBottom: 20 },
   statsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   statCard: { flex: 1, backgroundColor: '#1b263b', borderRadius: 10, padding: 12, marginHorizontal: 4, alignItems: 'center' },
@@ -325,7 +256,8 @@ const styles = StyleSheet.create({
   weekCard: { backgroundColor: '#1b263b', borderRadius: 12, padding: 16, borderLeftWidth: 4, borderLeftColor: '#FFD700' },
   weekCardCompleted: { borderLeftColor: '#4CAF50', opacity: 0.8 },
   focusAttr: { fontSize: 18, fontWeight: '700', color: '#FFD700', marginBottom: 8 },
-  focusLevel: { color: '#a8dadc', fontSize: 14, marginBottom: 12 },
+  focusLevel: { color: '#a8dadc', fontSize: 14, marginBottom: 8 },
+  intensityBadge: { color: '#1e88e5', fontSize: 12, fontWeight: '600', marginBottom: 12 },
   exercisesTitle: { fontSize: 14, fontWeight: '600', color: '#f1faee', marginBottom: 8 },
   exercise: { color: '#a8dadc', fontSize: 13, marginBottom: 4, marginLeft: 8 },
   completeButton: { marginTop: 16, paddingVertical: 12, backgroundColor: '#1e88e5', borderRadius: 8, alignItems: 'center' },
@@ -342,9 +274,9 @@ const styles = StyleSheet.create({
   attributeName: { color: '#f1faee', fontSize: 14, fontWeight: '600' },
   attributeValue: { color: '#a8dadc', fontSize: 14 },
   attributeValuePositive: { color: '#4CAF50', fontWeight: 'bold' },
-  noDataCard: { backgroundColor: '#1b263b', borderRadius: 12, padding: 20, alignItems: 'center', marginBottom: 20 },
-  noDataTitle: { fontSize: 18, fontWeight: 'bold', color: '#f1faee', marginBottom: 10 },
-  noDataText: { fontSize: 14, color: '#a8dadc', textAlign: 'center', marginBottom: 16 },
-  createButton: { backgroundColor: '#1e88e5', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8 },
-  createButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' }
+  noDataCard: { backgroundColor: '#1b263b', borderRadius: 12, padding: 30, alignItems: 'center', marginTop: 40 },
+  noDataTitle: { fontSize: 20, fontWeight: 'bold', color: '#f1faee', marginBottom: 10 },
+  noDataText: { fontSize: 14, color: '#a8dadc', textAlign: 'center', marginBottom: 20 },
+  createButton: { backgroundColor: '#28a745', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 8 },
+  createButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
 });
