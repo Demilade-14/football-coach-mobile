@@ -94,14 +94,14 @@ const AuthScreen = () => {
       <View style={styles.center}>
         {firebaseInitError ? (
           <>
-            <Text style={styles.errorTitle}>? Firebase initialization failed</Text>
+            <Text style={styles.errorTitle}>Firebase initialization failed</Text>
             <Text style={styles.errorText}>{firebaseInitError.message}</Text>
             <Text style={styles.errorHint}>Check your .env file and GitHub Secrets</Text>
             <TouchableOpacity 
               style={styles.retryButton}
               onPress={() => Platform.OS === 'web' && window.location.reload()}
             >
-              <Text style={styles.retryText}>?? Retry</Text>
+              <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -168,7 +168,7 @@ const AuthScreen = () => {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>
-              {isLogin ? '?? Login' : '?? Sign Up'}
+              {isLogin ? 'Login' : 'Sign Up'}
             </Text>
           )}
         </TouchableOpacity>
