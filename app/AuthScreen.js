@@ -71,6 +71,10 @@ const AuthScreen = () => {
     } catch (error) {
       console.error('Auth error:', error);
       let errorMessage = 'Authentication failed';
+      // Catch invalid credentials by message string too
+      if (error.message?.includes('invalid-credential') || error.message?.includes('INVALID_LOGIN_CREDENTIALS')) {
+        errorMessage = 'Invalid email or password. Please check and try again.';
+      }
       // Handle specific Firebase errors
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'Email already registered. Please login.';
@@ -78,8 +82,8 @@ const AuthScreen = () => {
         errorMessage = 'Invalid email address';
       } else if (error.code === 'auth/weak-password') {
         errorMessage = 'Password is too weak. Use at least 6 characters';
-      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password';
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/INVALID_LOGIN_CREDENTIALS') {
+        errorMessage = 'Invalid email or password. Please check and try again.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Network error. Please check your internet connection';
       }
