@@ -1,303 +1,314 @@
-﻿// app/PlayerCardScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Share } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getAllPlayers, deletePlayer } from '../src/utils/playerDatabase';
-const PlayerCardScreen = () => {
-  const router = useRouter();
-  const params = useLocalSearchParams();
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  useEffect(() => {
-    loadPlayers();
-  }, []);
-  const loadPlayers = async () => {
-    try {
-      setLoading(true);
-      const data = await getAllPlayers();
-      setPlayers(data || []);
-    } catch (error) {
-      console.error('Failed to load players:', error);
-      Alert.alert('Error', 'Could not load player cards');
-    } finally {
-      setLoading(false);
-    }
-  };
-  const handleShare = async (player) => {
-    try {
-      await Share.share({
-        message: `Check out my player: ${player.name}!\n⭐ Overall: ${player.overall}\n📍 Position: ${player.position}`,
-        title: `${player.name} - Football Coach`,
-      });
-    } catch (error) {
-      if (error.code !== 'ERR_CANCELED') {
-        console.log('Share cancelled');
-      }
-    }
-  };
-  const handleEdit = (player) => {
-    router.push({
-      pathname: '/ProfileForm',
-      params: { editId: player.id }
-    });
-  };
-  const handleDelete = async (player) => {
-    Alert.alert(
-      'Delete Player',
-      `Are you sure you want to delete ${player.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deletePlayer(player.id);
-              setPlayers(prev => prev.filter(p => p.id !== player.id));
-              Alert.alert('Deleted', `${player.name} has been removed`);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete player');
-            }
-          }
-        }
-      ]
-    );
-  };
-  const getRarityColor = (overall) => {
-    if (overall >= 90) return '#FFD700';
-    if (overall >= 85) return '#C0C0C0';
-    if (overall >= 80) return '#CD7F32';
-    return '#A8DADC';
-  };
-  const getRarityLabel = (overall) => {
-    if (overall >= 90) return 'LEGENDARY';
-    if (overall >= 85) return 'EPIC';
-    if (overall >= 80) return 'RARE';
-    return 'COMMON';
-  };
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.loadingText}>Loading players...</Text>
-      </View>
-    );
-  }
+﻿// src/components/PlayerCardFC26.js
+// FIX 1: GK position now shows DIV/HAN/KIC/REF/SPD/POS instead of PAC/SHO/PAS/DRI/DEF/PHY
+// FIX 2: Overall is taken directly from the `overall` prop — no internal recalculation
+//        so the correct position-aware rating from ProfileForm is always used
+// FIX 3: Rating floor removed — low ratings display correctly (e.g. 12, 25, 38)
+
+import React from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
+
+// ── Helpers ───────────────────────────────────────────────────
+
+const isGK = (pos) => pos === 'GK' || pos === 'Goalkeeper';
+
+const avg = (attrs, keys) => {
+  const vals = keys.map(k => Number(attrs?.[k]) || 0);
+  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+};
+
+// Six outfield stats shown for non-GK players
+const getOutfieldStats = (attrs = {}) => [
+  { label: 'PAC', value: avg(attrs, ['acceleration', 'sprintSpeed']) },
+  { label: 'SHO', value: avg(attrs, ['finishing', 'shotPower', 'longShots', 'volleys', 'penalties']) },
+  { label: 'PAS', value: avg(attrs, ['vision', 'crossing', 'shortPassing', 'longPassing', 'curve']) },
+  { label: 'DRI', value: avg(attrs, ['agility', 'balance', 'reactions', 'ballControl', 'dribbling', 'composure']) },
+  { label: 'DEF', value: avg(attrs, ['interceptions', 'headingAccuracy', 'marking', 'standingTackle', 'slidingTackle']) },
+  { label: 'PHY', value: avg(attrs, ['jumping', 'stamina', 'strength', 'aggression']) },
+];
+
+// Six GK-specific stats shown only when position is GK
+const getGKStats = (attrs = {}) => [
+  { label: 'DIV', value: Number(attrs?.diving)      || 0 },
+  { label: 'HAN', value: Number(attrs?.handling)    || 0 },
+  { label: 'KIC', value: Number(attrs?.kicking)     || 0 },
+  { label: 'REF', value: Number(attrs?.reflexes)    || 0 },
+  { label: 'SPD', value: avg(attrs, ['acceleration', 'sprintSpeed']) },
+  { label: 'POS', value: Number(attrs?.positioning) || 0 },
+];
+
+// Tier styling based on overall
+const getTier = (ovr) => {
+  if (ovr >= 85) return { label: 'ICON',   border: '#9b59b6', bg: 'rgba(155,89,182,0.15)' };
+  if (ovr >= 80) return { label: 'ELITE',  border: '#ffd700', bg: 'rgba(255,215,0,0.12)' };
+  if (ovr >= 75) return { label: 'GOLD',   border: '#ffa726', bg: 'rgba(255,167,38,0.12)' };
+  if (ovr >= 65) return { label: 'SILVER', border: '#90a4ae', bg: 'rgba(144,164,174,0.12)' };
+  if (ovr >= 55) return { label: 'BRONZE', border: '#cd7f32', bg: 'rgba(205,127,50,0.12)' };
+  if (ovr >= 40) return { label: 'IRON',   border: '#ef5350', bg: 'rgba(239,83,80,0.10)' };
+  return           { label: 'ROOKIE',  border: '#78909c', bg: 'rgba(120,144,156,0.10)' };
+};
+
+// Stat value colour
+const statColor = (v) => {
+  if (v >= 75) return '#4caf50';
+  if (v >= 55) return '#ffc107';
+  if (v >= 1)  return '#ef5350';
+  return '#4a6278'; // 0 = greyed out
+};
+
+const FLAG_MAP = {
+  England: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', Scotland: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', Wales: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  France: '🇫🇷', Germany: '🇩🇪', Spain: '🇪🇸', Italy: '🇮🇹',
+  Portugal: '🇵🇹', Netherlands: '🇳🇱', Belgium: '🇧🇪',
+  Brazil: '🇧🇷', Argentina: '🇦🇷', Nigeria: '🇳🇬', Ghana: '🇬🇭',
+  Senegal: '🇸🇳', 'South Africa': '🇿🇦', Egypt: '🇪🇬',
+  'United States': '🇺🇸', Mexico: '🇲🇽', Canada: '🇨🇦',
+  Japan: '🇯🇵', 'South Korea': '🇰🇷', Australia: '🇦🇺',
+  China: '🇨🇳', India: '🇮🇳', Turkey: '🇹🇷', Poland: '🇵🇱',
+  Norway: '🇳🇴', Sweden: '🇸🇪', Denmark: '🇩🇰', Switzerland: '🇨🇭',
+  Austria: '🇦🇹', Russia: '🇷🇺', Ukraine: '🇺🇦', 'Saudi Arabia': '🇸🇦',
+};
+
+// ── Main component ────────────────────────────────────────────
+
+const PlayerCardFC26 = ({ player = {} }) => {
+  const {
+    name            = 'Anonymous',
+    position        = 'ST',
+    attrs           = {},
+    age,
+    height          = '',
+    nationality     = '',
+    club            = '',
+    jersey          = '',
+    skillMoves      = 3,
+    weakFoot        = 3,
+    image           = null,
+    playStyles      = [],
+    attackWorkRate  = 'High',
+    defenseWorkRate = 'Medium',
+    bodyType        = 'average',
+    archetype       = '',
+    // ── KEY FIX: use overall directly from ProfileForm, never recalculate here ──
+    overall         = 0,
+  } = player;
+
+  const gk    = isGK(position);
+  const tier  = getTier(overall);
+  // Switch the stat grid based on position
+  const stats = gk ? getGKStats(attrs) : getOutfieldStats(attrs);
+  const flag  = FLAG_MAP[nationality] || '🌍';
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>⬅️ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>⭐ Player Cards</Text>
-        <Text style={styles.subtitle}>Tap a card to view details</Text>
-      </View>
-      {players.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🎮</Text>
-          <Text style={styles.emptyText}>No players yet</Text>
-          <Text style={styles.emptySubtext}>Create your first player to get started</Text>
-          <TouchableOpacity 
-            style={styles.createButton}
-            onPress={() => router.push('/ProfileForm')}
-          >
-            <Text style={styles.createButtonText}>+ Create Player</Text>
-          </TouchableOpacity>
+    <View style={[c.wrapper, { borderColor: tier.border, backgroundColor: '#0d1b2a' }]}>
+
+      {/* Top bar */}
+      <View style={[c.topBar, { backgroundColor: tier.bg }]}>
+        <View style={c.ovrBlock}>
+          <Text style={[c.ovrNum, { color: tier.border }]}>{overall}</Text>
+          <Text style={c.posLabel}>{position}</Text>
         </View>
-      ) : (
-        <View style={styles.grid}>
-          {players.map((player) => (
-            <TouchableOpacity
-              key={player.id}
-              style={[styles.card, { borderLeftColor: getRarityColor(player.overall) }]}
-              onPress={() => setSelectedPlayer(player)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.rarityBadge}>
-                <Text style={styles.rarityText}>{getRarityLabel(player.overall)}</Text>
-              </View>
-              <View style={styles.cardContent}>
-                <Text style={styles.playerName}>{player.name}</Text>
-                <Text style={styles.playerPosition}>{player.position || 'Position'}</Text>
-                <View style={styles.ratingContainer}>
-                  <Text style={styles.ratingLabel}>Overall</Text>
-                  <Text style={[styles.ratingValue, { color: getRarityColor(player.overall) }]}>
-                    {player.overall || 0}
-                  </Text>
-                </View>
-                <View style={styles.statsPreview}>
-                  <Text style={styles.stat}>🏃 Pace: {player.pace || '-'}</Text>
-                  <Text style={styles.stat}>⚽ Shooting: {player.shooting || '-'}</Text>
-                </View>
-              </View>
-              <View style={styles.cardActions}>
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => handleShare(player)}
-                >
-                  <Text style={styles.actionIcon}>📤</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => handleEdit(player)}
-                >
-                  <Text style={styles.actionIcon}>✏️</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.deleteButton]}
-                  onPress={() => handleDelete(player)}
-                >
-                  <Text style={styles.actionIcon}>🗑️</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
+        {!!jersey && (
+          <View style={c.jerseyBadge}>
+            <Text style={c.jerseyText}>#{jersey}</Text>
+          </View>
+        )}
+        <View style={[c.tierBadge, { backgroundColor: tier.border }]}>
+          <Text style={c.tierText}>{tier.label}</Text>
+        </View>
+      </View>
+
+      {/* Name */}
+      <Text style={c.name} numberOfLines={1}>{String(name).toUpperCase()}</Text>
+
+      {/* Player image */}
+      <View style={c.imageWrap}>
+        {image
+          ? <Image source={{ uri: image }} style={c.playerImage} />
+          : (
+            <View style={c.noImage}>
+              <Text style={c.noImageIcon}>{gk ? '🧤' : '⚽'}</Text>
+              <Text style={c.noImageText}>No Photo</Text>
+            </View>
+          )
+        }
+      </View>
+
+      {/* Club / flag / nationality */}
+      <View style={c.metaRow}>
+        <View style={c.metaBadge}>
+          <Text style={c.metaText}>{club ? club.substring(0, 3).toUpperCase() : 'CLB'}</Text>
+        </View>
+        <Text style={c.flagText}>{flag}</Text>
+        <View style={c.metaBadge}>
+          <Text style={c.metaText}>{nationality ? nationality.substring(0, 3).toUpperCase() : 'NAT'}</Text>
+        </View>
+      </View>
+
+      <View style={[c.divider, { backgroundColor: tier.border + '44' }]} />
+
+      {/* Stats grid — switches between GK and outfield */}
+      <View style={c.statsGrid}>
+        {stats.map(({ label, value }) => (
+          <View key={label} style={c.statCell}>
+            <Text style={[c.statVal, { color: statColor(value) }]}>{value}</Text>
+            <Text style={c.statLabel}>{label}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* GK hint */}
+      {gk && (
+        <Text style={c.gkHint}>🧤 GK — DIV · HAN · KIC · REF · SPD · POS</Text>
+      )}
+
+      <View style={[c.divider, { backgroundColor: tier.border + '44' }]} />
+
+      {/* Footer: skill moves / archetype / weak foot */}
+      <View style={c.footer}>
+        <View style={c.footerSide}>
+          <Text style={c.starLine}>{'★'.repeat(skillMoves)}{'☆'.repeat(5 - skillMoves)}</Text>
+          <Text style={c.footerSub}>{skillMoves}★ SM</Text>
+        </View>
+        {!!archetype && (
+          <View style={[c.archetypeChip, { borderColor: tier.border }]}>
+            <Text style={[c.archetypeText, { color: tier.border }]} numberOfLines={1}>{archetype}</Text>
+          </View>
+        )}
+        <View style={[c.footerSide, { alignItems: 'flex-end' }]}>
+          <Text style={c.starLine}>{'★'.repeat(weakFoot)}{'☆'.repeat(5 - weakFoot)}</Text>
+          <Text style={c.footerSub}>{weakFoot}★ WF</Text>
+        </View>
+      </View>
+
+      {/* PlayStyles */}
+      {playStyles && playStyles.length > 0 && (
+        <View style={c.psRow}>
+          {playStyles.slice(0, 4).map(ps => (
+            <View key={ps} style={[c.psChip, { borderColor: tier.border + '66' }]}>
+              <Text style={c.psText} numberOfLines={1}>{ps}</Text>
+            </View>
           ))}
         </View>
       )}
-      {selectedPlayer && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity 
-              style={styles.closeModal}
-              onPress={() => setSelectedPlayer(null)}
-            >
-              <Text style={styles.closeText}>✕</Text>
-            </TouchableOpacity>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalName}>{selectedPlayer.name}</Text>
-              <Text style={styles.modalPosition}>{selectedPlayer.position}</Text>
-              <Text style={[styles.modalRating, { color: getRarityColor(selectedPlayer.overall) }]}>
-                {selectedPlayer.overall} Overall
-              </Text>
-            </View>
-            <View style={styles.modalStats}>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Pace</Text>
-                <Text style={styles.statValue}>{selectedPlayer.pace || '-'}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Shooting</Text>
-                <Text style={styles.statValue}>{selectedPlayer.shooting || '-'}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Passing</Text>
-                <Text style={styles.statValue}>{selectedPlayer.passing || '-'}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Dribbling</Text>
-                <Text style={styles.statValue}>{selectedPlayer.dribbling || '-'}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Defending</Text>
-                <Text style={styles.statValue}>{selectedPlayer.defending || '-'}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Physical</Text>
-                <Text style={styles.statValue}>{selectedPlayer.physical || '-'}</Text>
-              </View>
-            </View>
-            <View style={styles.modalActions}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.shareButton]}
-                onPress={() => handleShare(selectedPlayer)}
-              >
-                <Text style={styles.modalButtonText}>📤 Share</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.editButton]}
-                onPress={() => {
-                  setSelectedPlayer(null);
-                  handleEdit(selectedPlayer);
-                }}
-              >
-                <Text style={styles.modalButtonText}>✏️ Edit</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
-    </ScrollView>
+
+      {/* Work rates */}
+      <View style={c.wrRow}>
+        <Text style={c.wrText}>⚔️ {attackWorkRate}</Text>
+        <Text style={c.wrDot}>·</Text>
+        <Text style={c.wrText}>🛡️ {defenseWorkRate}</Text>
+        {!!bodyType && (
+          <>
+            <Text style={c.wrDot}>·</Text>
+            <Text style={c.wrText}>
+              {bodyType === 'lean' ? '🏃' : bodyType === 'stocky' ? '💪' : '⚖️'} {bodyType}
+            </Text>
+          </>
+        )}
+      </View>
+
+    </View>
   );
 };
-export default PlayerCardScreen;
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0d1b2a' },
-  content: { padding: 20, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d1b2a' },
-  loadingText: { color: '#a8dadc', fontSize: 16 },
-  header: { marginBottom: 24, alignItems: 'center' },
-  backButton: { alignSelf: 'flex-start', padding: 8 },
-  backText: { color: '#1e88e5', fontSize: 16, fontWeight: 'bold' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#ffd700', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#a8dadc' },
-  emptyState: { alignItems: 'center', padding: 40 },
-  emptyIcon: { fontSize: 48, marginBottom: 16 },
-  emptyText: { fontSize: 18, fontWeight: 'bold', color: '#f1faee', marginBottom: 8 },
-  emptySubtext: { fontSize: 14, color: '#a8dadc', textAlign: 'center', marginBottom: 24 },
-  createButton: { backgroundColor: '#28a745', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8 },
-  createButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  grid: { gap: 16 },
-  card: { 
-    backgroundColor: '#1b263b', 
-    borderRadius: 12, 
-    overflow: 'hidden',
-    borderLeftWidth: 4,
+
+export default PlayerCardFC26;
+
+// ── Styles ────────────────────────────────────────────────────
+
+const c = StyleSheet.create({
+  wrapper: {
+    borderRadius: 16,
+    borderWidth: 2,
+    padding: 14,
+    width: 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  rarityBadge: { 
-    backgroundColor: '#0d1b2a', 
-    paddingHorizontal: 12, 
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
-    borderBottomRightRadius: 8,
-  },
-  rarityText: { color: '#ffd700', fontSize: 10, fontWeight: 'bold' },
-  cardContent: { padding: 16 },
-  playerName: { fontSize: 18, fontWeight: 'bold', color: '#f1faee', marginBottom: 4 },
-  playerPosition: { fontSize: 14, color: '#a8dadc', marginBottom: 12 },
-  ratingContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  ratingLabel: { color: '#a8dadc', fontSize: 12, marginRight: 8 },
-  ratingValue: { fontSize: 24, fontWeight: 'bold' },
-  statsPreview: { gap: 4 },
-  stat: { fontSize: 12, color: '#a8dadc' },
-  cardActions: { 
-    flexDirection: 'row', 
-    borderTopWidth: 1, 
-    borderTopColor: '#2a3f5f',
-    padding: 12,
-    justifyContent: 'space-around'
-  },
-  actionButton: { padding: 8 },
-  actionIcon: { fontSize: 18 },
-  deleteButton: { opacity: 0.8 },
-  modalOverlay: { 
-    position: 'absolute', 
-    top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    zIndex: 100,
+    justifyContent: 'space-between',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
   },
-  modalContent: { 
-    backgroundColor: '#1b263b', 
-    borderRadius: 16, 
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
+  ovrBlock:     { alignItems: 'center', minWidth: 44 },
+  ovrNum:       { fontSize: 34, fontWeight: '900', lineHeight: 38 },
+  posLabel:     { color: '#7f8c8d', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  jerseyBadge:  { backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  jerseyText:   { color: '#7f8c8d', fontSize: 12, fontWeight: '700' },
+  tierBadge:    { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
+  tierText:     { color: '#fff', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+
+  name: {
+    color: '#ecf0f1',
+    fontSize: 17,
+    fontWeight: '900',
+    textAlign: 'center',
+    letterSpacing: 1,
+    marginBottom: 10,
   },
-  closeModal: { alignSelf: 'flex-end', padding: 8 },
-  closeText: { color: '#a8dadc', fontSize: 24 },
-  modalHeader: { alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#2a3f5f' },
-  modalName: { fontSize: 24, fontWeight: 'bold', color: '#f1faee', marginBottom: 4 },
-  modalPosition: { fontSize: 16, color: '#a8dadc', marginBottom: 8 },
-  modalRating: { fontSize: 32, fontWeight: 'bold' },
-  modalStats: { marginBottom: 24 },
-  statRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#2a3f5f' },
-  statLabel: { color: '#a8dadc', fontSize: 14 },
-  statValue: { color: '#f1faee', fontSize: 14, fontWeight: '600' },
-  modalActions: { flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
-  shareButton: { backgroundColor: '#1e88e5' },
-  editButton: { backgroundColor: '#28a745' },
-  modalButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+
+  imageWrap:   { alignItems: 'center', marginBottom: 10 },
+  playerImage: { width: 120, height: 120, borderRadius: 12 },
+  noImage: {
+    width: 120, height: 120, borderRadius: 12,
+    backgroundColor: '#091525',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#1e3a5f',
+  },
+  noImageIcon: { fontSize: 30, marginBottom: 4 },
+  noImageText: { color: '#3a6186', fontSize: 11 },
+
+  metaRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
+  metaBadge:  { backgroundColor: '#091525', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, minWidth: 40, alignItems: 'center' },
+  metaText:   { color: '#7f8c8d', fontSize: 11, fontWeight: '700' },
+  flagText:   { fontSize: 22 },
+
+  divider: { height: 1, marginVertical: 8, borderRadius: 1 },
+
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  statCell:  { width: '30%', alignItems: 'center', marginVertical: 6 },
+  statVal:   { fontSize: 22, fontWeight: '900' },
+  statLabel: { color: '#7f8c8d', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginTop: 2 },
+
+  gkHint: {
+    color: '#3a6186',
+    fontSize: 9,
+    textAlign: 'center',
+    marginBottom: 4,
+    fontStyle: 'italic',
+  },
+
+  footer:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerSide: { flex: 1 },
+  starLine:   { color: '#f39c12', fontSize: 11 },
+  footerSub:  { color: '#7f8c8d', fontSize: 9, marginTop: 2 },
+
+  archetypeChip: {
+    borderWidth: 1, borderRadius: 6,
+    paddingHorizontal: 8, paddingVertical: 3,
+    alignItems: 'center', maxWidth: 100,
+  },
+  archetypeText: { fontSize: 10, fontWeight: '800' },
+
+  psRow:  { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 4, marginTop: 8 },
+  psChip: {
+    borderWidth: 1, borderRadius: 4,
+    paddingHorizontal: 6, paddingVertical: 2,
+    backgroundColor: '#091525',
+  },
+  psText: { color: '#7f8c8d', fontSize: 9, fontWeight: '600' },
+
+  wrRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 6, gap: 4 },
+  wrText: { color: '#7f8c8d', fontSize: 9 },
+  wrDot:  { color: '#1e3a5f', fontSize: 9 },
 });

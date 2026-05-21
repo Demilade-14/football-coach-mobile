@@ -1,536 +1,528 @@
-﻿// app/VIPChat.js — FIXED
-// FIX 1: API key now read correctly from EXPO_PUBLIC_CLAUDE_API_KEY
-// FIX 2: All Animated calls use useNativeDriver: false to fix the missing native module warning
-// FIX 3: No stray text nodes inside View (fixes "text node cannot be child of View" error)
+﻿// =============================================================
+// FILE: /app/AICoach.js
+// PURPOSE: AI Chat Coach screen — full production UI
+// =============================================================
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
-  Alert, KeyboardAvoidingView, Platform, Animated, ActivityIndicator,
-  Pressable, Dimensions,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  StatusBar,
+  Animated,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useSubscription } from "../src/context/SubscriptionContext";
+import {
+  loadMessages,
+  saveMessages,
+  clearMessages,
+  syncMessagesToCloud,
+  loadMessagesFromCloud,
+} from "../src/utils/chatStorage";
 
-const { width } = Dimensions.get('window');
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
 
-// ── API config ────────────────────────────────────────────────
-// Make sure your .env has: EXPO_PUBLIC_CLAUDE_API_KEY=sk-ant-...
-const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY ?? '';
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+// ── Message bubble component ──────────────────────────────────
+function MessageBubble({ item }) {
+  const isUser = item.role === "user";
+  const isError = item.isError;
 
-const SYSTEM_PROMPT = `You are Coach AI, an elite football (soccer) coach and sports psychologist with 20+ years of professional experience. You have coached in the Premier League, La Liga, Champions League, and with national teams.
+  return (
+    <View style={[styles.bubbleWrapper, isUser ? styles.bubbleWrapperUser : styles.bubbleWrapperAI]}>
+      {!isUser && (
+        <View style={styles.aiAvatar}>
+          <Text style={styles.aiAvatarText}>⚽</Text>
+        </View>
+      )}
+      <View
+        style={[
+          styles.bubble,
+          isUser ? styles.bubbleUser : styles.bubbleAI,
+          isError && styles.bubbleError,
+        ]}
+      >
+        <Text style={[styles.bubbleText, isUser ? styles.bubbleTextUser : styles.bubbleTextAI]}>
+          {item.content}
+        </Text>
+        <Text style={styles.bubbleTime}>
+          {new Date(item.timestamp || Date.now()).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
-Your personality:
-- Warm, encouraging, and deeply knowledgeable
-- You speak with authority but never arrogance
-- You use football terminology correctly and naturally
-- You're empathetic — acknowledge feelings FIRST before giving advice
-- You celebrate wins (big and small) enthusiastically
-- You use emojis naturally but not excessively (max 2-3 per message)
-- You ask smart follow-up questions for personalized advice
-
-Your expertise covers:
-- Technical: passing, shooting, dribbling, first touch, crossing, heading, set pieces, weak foot
-- Tactical: formations, positioning, pressing, transitions, game reading, off-the-ball movement
-- Positions: GK, CB, FB, CDM, CM, CAM, winger, striker — deep specific knowledge of each
-- Physical: fitness, agility, speed, strength, injury prevention, recovery, stretching
-- Mental: confidence, focus, game nerves, leadership, resilience, visualization, pre-match routines
-- Nutrition and recovery science specifically for footballers
-- Getting scouted, trials advice, academy application strategies
-- Youth development (ages 8-21) and amateur to semi-professional pathways
-- How to train effectively alone without a team
-
-Rules:
-- ALWAYS give specific, actionable advice — never vague or generic tips
-- For skill questions: provide a concrete drill with reps/sets/duration
-- For mental questions: give specific psychological techniques with steps
-- Keep responses focused and under 200 words unless a detailed breakdown is truly needed
-- Use bullet points or numbered lists for drills and multi-step advice
-- If asked something completely unrelated to football/sports/fitness, gently redirect
-- Address the player by name when you know it
-- Never make up statistics or fake player quotes`;
-
-const QUICK_ACTIONS = [
-  { icon: '⚽', label: 'Shooting drill', prompt: 'Give me a specific shooting drill I can do alone today' },
-  { icon: '🎯', label: 'Passing tips', prompt: 'How can I improve my passing accuracy under pressure?' },
-  { icon: '🧠', label: 'Mental game', prompt: 'I get very nervous before big matches. How do I stay calm and perform my best?' },
-  { icon: '🏃', label: 'Fitness plan', prompt: 'Give me a football-specific fitness plan I can do this week' },
-  { icon: '🛡️', label: 'Defending', prompt: 'How do I improve my 1v1 defending? I keep getting beaten by fast attackers' },
-  { icon: '🌀', label: 'Dribbling', prompt: 'What are the best dribbling drills to help me beat defenders?' },
-  { icon: '📋', label: 'Get scouted', prompt: 'What do I need to do to get noticed by scouts and coaches?' },
-  { icon: '💪', label: 'Weak foot', prompt: 'My weak foot is really bad. Give me a programme to improve it in 4 weeks' },
-];
-
-// ── Typing animation dots ─────────────────────────────────────
-// FIX: useNativeDriver: false (native animated module not linked in Expo web)
-const TypingDots = () => {
+// ── Typing indicator ──────────────────────────────────────────
+function TypingIndicator() {
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const animate = (dot, delay) => {
+    const animate = (dot, delay) =>
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(dot, { toValue: 1, duration: 350, useNativeDriver: false }),
-          Animated.timing(dot, { toValue: 0, duration: 350, useNativeDriver: false }),
-          Animated.delay(Math.max(0, 700 - delay)),
+          Animated.timing(dot, { toValue: -6, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.delay(600),
         ])
       ).start();
-    };
+
     animate(dot1, 0);
-    animate(dot2, 180);
-    animate(dot3, 360);
-  }, [dot1, dot2, dot3]);
-
-  const dotStyle = (anim) => ({
-    width: 7, height: 7, borderRadius: 4,
-    backgroundColor: '#4fc3f7',
-    marginHorizontal: 3,
-    opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-    transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) }],
-  });
-
-  return (
-    <View style={styles.typingContainer}>
-      <View style={styles.typingAvatar}>
-        <Text style={styles.avatarEmoji}>🤖</Text>
-      </View>
-      <View style={styles.typingBubble}>
-        <Text style={styles.typingLabel}>Coach AI is thinking...</Text>
-        <View style={styles.dotsRow}>
-          <Animated.View style={dotStyle(dot1)} />
-          <Animated.View style={dotStyle(dot2)} />
-          <Animated.View style={dotStyle(dot3)} />
-        </View>
-      </View>
-    </View>
-  );
-};
-
-// ── Message bubble ────────────────────────────────────────────
-// FIX: useNativeDriver: false to prevent missing module warning
-const MessageBubble = ({ item }) => {
-  const isPlayer = item.sender === 'Player';
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(15)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 280, useNativeDriver: false }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 280, useNativeDriver: false }),
-    ]).start();
+    animate(dot2, 150);
+    animate(dot3, 300);
   }, []);
 
   return (
-    <Animated.View
-      style={[
-        styles.messageRow,
-        isPlayer ? styles.messageRowRight : styles.messageRowLeft,
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-      ]}
-    >
-      {!isPlayer && (
-        <View style={styles.coachAvatar}>
-          <Text style={styles.avatarEmoji}>🤖</Text>
-        </View>
-      )}
-      <View style={[styles.messageBubble, isPlayer ? styles.playerBubble : styles.coachBubble]}>
-        {!isPlayer && <Text style={styles.senderLabel}>COACH AI</Text>}
-        <Text style={[styles.messageText, isPlayer ? styles.playerText : styles.coachText]}>
-          {item.text}
-        </Text>
-        <Text style={[styles.timeText, isPlayer ? styles.timeRight : styles.timeLeft]}>
-          {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
+    <View style={styles.typingWrapper}>
+      <View style={styles.aiAvatar}>
+        <Text style={styles.aiAvatarText}>⚽</Text>
       </View>
-      {isPlayer && (
-        <View style={styles.playerAvatar}>
-          <Text style={styles.avatarEmoji}>⚽</Text>
-        </View>
-      )}
-    </Animated.View>
+      <View style={styles.typingBubble}>
+        {[dot1, dot2, dot3].map((dot, i) => (
+          <Animated.View
+            key={i}
+            style={[styles.typingDot, { transform: [{ translateY: dot }] }]}
+          />
+        ))}
+      </View>
+    </View>
   );
-};
+}
 
-// ── Main component ────────────────────────────────────────────
-export default function VIPChat() {
+// ── Quick suggestions ─────────────────────────────────────────
+const QUICK_SUGGESTIONS = [
+  "Best formation for 11 players?",
+  "How to improve team pressing?",
+  "Training drills for strikers",
+  "Motivating underperforming players",
+];
+
+// ── Main Component ────────────────────────────────────────────
+export default function AICoach() {
   const router = useRouter();
+  const { isVip, userId } = useSubscription();
+
   const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
+  const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isVIP, setIsVIP] = useState(false);
-  const [checkingVIP, setCheckingVIP] = useState(true);
-  const [showQuickActions, setShowQuickActions] = useState(true);
-  const [conversationHistory, setConversationHistory] = useState([]);
-  const [userName, setUserName] = useState('Champion');
+  const [isLoading, setIsLoading] = useState(true);
+  const [retryPayload, setRetryPayload] = useState(null);
+
   const flatListRef = useRef(null);
 
-  useEffect(() => { checkVIPAccess(); }, []);
-
+  // ── Load message history on mount ────────────────────────────
   useEffect(() => {
-    if (isVIP) loadUserProfile().then(loadMessages);
-  }, [isVIP]);
+    (async () => {
+      try {
+        // VIP: try to load from cloud first
+        if (isVip && userId) {
+          const cloudMessages = await loadMessagesFromCloud(userId);
+          if (cloudMessages && cloudMessages.length > 0) {
+            setMessages(cloudMessages);
+            setIsLoading(false);
+            return;
+          }
+        }
+        // Free: load from local storage
+        const localMessages = await loadMessages();
+        setMessages(localMessages);
+      } catch {
+        setMessages([]);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [isVip, userId]);
 
+  // ── Save messages whenever they change ───────────────────────
   useEffect(() => {
-    if (messages.length > 0 || isTyping) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+    if (messages.length === 0) return;
+    saveMessages(messages);
+    if (isVip && userId) {
+      syncMessagesToCloud(userId, messages); // Non-blocking
     }
+  }, [messages, isVip, userId]);
+
+  // ── Scroll to bottom ─────────────────────────────────────────
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+  }, []);
+
+  useEffect(() => {
+    if (messages.length > 0) scrollToBottom();
   }, [messages, isTyping]);
 
-  const checkVIPAccess = async () => {
-    try {
-      const vipStatus = await AsyncStorage.getItem('isVIP');
-      if (vipStatus === 'true') {
-        setIsVIP(true);
-      } else {
-        // Not VIP — show upgrade prompt
-        Alert.alert(
-          '✨ Premium Feature',
-          'Upgrade to VIP for unlimited AI coaching sessions!',
-          [
-            { text: 'Not Now', onPress: () => router.back(), style: 'cancel' },
-            { text: 'Upgrade', onPress: () => router.replace('/VIPSubscription') },
-          ]
-        );
-      }
-    } catch {
-      router.back();
-    } finally {
-      setCheckingVIP(false);
-    }
-  };
+  // ── Build history for API context (last 10 messages) ─────────
+  const getApiHistory = useCallback(() => {
+    return messages
+      .filter((m) => !m.isError)
+      .slice(-10)
+      .map((m) => ({ role: m.role, content: m.content }));
+  }, [messages]);
 
-  const loadUserProfile = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        const name = u.name || 'Champion';
-        setUserName(name);
-        return name;
-      }
-    } catch {}
-    return 'Champion';
-  };
+  // ── Send message ─────────────────────────────────────────────
+  const sendMessage = useCallback(
+    async (text = input) => {
+      const trimmed = text.trim();
+      if (!trimmed || isTyping) return;
 
-  const loadMessages = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('vip_chat_v2');
-      if (stored) {
-        const { msgs, history } = JSON.parse(stored);
-        if (msgs && msgs.length > 0) {
-          setMessages(msgs);
-          setConversationHistory(history || []);
-          setShowQuickActions(false);
-          return;
+      setInput("");
+      setRetryPayload(null);
+
+      const userMessage = {
+        id: `user_${Date.now()}`,
+        role: "user",
+        content: trimmed,
+        timestamp: Date.now(),
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+      setIsTyping(true);
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+        const res = await fetch(`${API_BASE}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: trimmed,
+            history: getApiHistory(),
+            userId: userId || "anonymous",
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          // Rate limit check
+          if (res.status === 429 && data.isRateLimit) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `err_${Date.now()}`,
+                role: "assistant",
+                content: "⏱️ You've reached the free limit of 30 chats/hour. Upgrade to VIP for unlimited coaching!",
+                timestamp: Date.now(),
+                isError: true,
+              },
+            ]);
+            return;
+          }
+          throw new Error(data.error || "Server error");
         }
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai_${Date.now()}`,
+            role: "assistant",
+            content: data.reply,
+            timestamp: data.timestamp || Date.now(),
+          },
+        ]);
+      } catch (err) {
+        const isTimeout = err.name === "AbortError";
+        const errMsg = isTimeout
+          ? "Response timed out. Please try again."
+          : err.message || "Failed to get response. Check your connection.";
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_${Date.now()}`,
+            role: "assistant",
+            content: `⚠️ ${errMsg}`,
+            timestamp: Date.now(),
+            isError: true,
+          },
+        ]);
+
+        // Store for retry
+        setRetryPayload(trimmed);
+      } finally {
+        setIsTyping(false);
       }
-    } catch {}
-    sendWelcomeMessage();
-  };
+    },
+    [input, isTyping, getApiHistory, userId]
+  );
 
-  const sendWelcomeMessage = () => {
-    const welcome = {
-      id: 'welcome',
-      text: `Hey ${userName}! 👋 I'm Coach AI — your personal football coach.\n\nI can help you with:\n• Skill drills & technique\n• Tactics & positioning\n• Mental game & confidence\n• Fitness & recovery\n• Getting scouted\n\nTap a quick start below or ask me anything!`,
-      sender: 'Coach',
-      timestamp: new Date().toISOString(),
-    };
-    setMessages([welcome]);
-  };
-
-  const saveData = async (msgs, history) => {
-    try {
-      await AsyncStorage.setItem('vip_chat_v2', JSON.stringify({ msgs, history }));
-    } catch {}
-  };
-
-  // ── Call Claude API ───────────────────────────────────────
-  const callClaudeAPI = async (userMessage, history) => {
-    const key = CLAUDE_API_KEY.trim();
-
-    if (!key || key === '') {
-      throw new Error('NO_API_KEY');
-    }
-
-    const updatedHistory = [...history, { role: 'user', content: userMessage }];
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 600,
-        system: SYSTEM_PROMPT,
-        messages: updatedHistory,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      const msg = err?.error?.message || `HTTP ${response.status}`;
-      throw new Error(msg);
-    }
-
-    const data = await response.json();
-    const reply = data.content?.[0]?.text || "I couldn't generate a response. Please try again!";
-
-    return {
-      reply,
-      newHistory: [...updatedHistory, { role: 'assistant', content: reply }],
-    };
-  };
-
-  // ── Send message ──────────────────────────────────────────
-  const sendMessage = useCallback(async (overrideText) => {
-    const text = (overrideText || inputText).trim();
-    if (!text || isTyping) return;
-
-    setInputText('');
-    setShowQuickActions(false);
-
-    const userMsg = {
-      id: Date.now().toString(),
-      text,
-      sender: 'Player',
-      timestamp: new Date().toISOString(),
-    };
-
-    const withUser = [...messages, userMsg];
-    setMessages(withUser);
-    setIsTyping(true);
-
-    try {
-      const { reply, newHistory } = await callClaudeAPI(text, conversationHistory);
-      const coachMsg = {
-        id: (Date.now() + 1).toString(),
-        text: reply,
-        sender: 'Coach',
-        timestamp: new Date().toISOString(),
-      };
-      const final = [...withUser, coachMsg];
-      setMessages(final);
-      setConversationHistory(newHistory);
-      await saveData(final, newHistory);
-
-    } catch (error) {
-      let errorText;
-      if (error.message === 'NO_API_KEY') {
-        errorText = `⚠️ Claude API key not configured.\n\nAdd this to your .env file and restart:\n\nEXPO_PUBLIC_CLAUDE_API_KEY=sk-ant-api03-...`;
-      } else if (error.message?.includes('401')) {
-        errorText = `❌ Invalid API key. Check your EXPO_PUBLIC_CLAUDE_API_KEY in .env`;
-      } else if (error.message?.includes('429')) {
-        errorText = `⏱ Rate limit hit. Please wait a moment and try again.`;
-      } else {
-        errorText = `Connection error. Please check your internet.\n\nDetails: ${error.message}`;
-      }
-
-      const coachMsg = {
-        id: (Date.now() + 1).toString(),
-        text: errorText,
-        sender: 'Coach',
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([...withUser, coachMsg]);
-    } finally {
-      setIsTyping(false);
-    }
-  }, [inputText, isTyping, messages, conversationHistory]);
-
-  const clearChat = () => {
-    Alert.alert('New Session', 'Start a fresh coaching session?', [
-      { text: 'Cancel', style: 'cancel' },
+  // ── Clear chat ───────────────────────────────────────────────
+  const handleClear = () => {
+    Alert.alert("Clear Chat", "Delete all messages? This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Start Fresh', style: 'destructive', onPress: async () => {
+        text: "Clear",
+        style: "destructive",
+        onPress: async () => {
           setMessages([]);
-          setConversationHistory([]);
-          setShowQuickActions(true);
-          await AsyncStorage.removeItem('vip_chat_v2');
-          sendWelcomeMessage();
+          await clearMessages();
         },
       },
     ]);
   };
 
-  if (checkingVIP) {
+  // ── Render ───────────────────────────────────────────────────
+  if (isLoading) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#4fc3f7" />
-        <Text style={styles.loadingText}>Connecting to Coach AI...</Text>
-      </View>
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </SafeAreaView>
     );
   }
 
-  if (!isVIP) return null;
-
-  const sessionCount = Math.floor(conversationHistory.length / 2);
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-          <Text style={styles.backArrow}>←</Text>
+          <Text style={styles.headerBtnText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <View style={styles.headerAvatarWrap}>
-            <Text style={styles.headerAvatar}>🤖</Text>
-            <View style={styles.onlineDot} />
-          </View>
-          <View>
-            <Text style={styles.headerTitle}>Coach AI</Text>
-            <Text style={styles.headerSub}>⚡ Premium · Always Available</Text>
-          </View>
+          <Text style={styles.headerTitle}>⚽ AI Coach</Text>
+          {isVip && <Text style={styles.headerVipBadge}>VIP</Text>}
         </View>
-        <TouchableOpacity onPress={clearChat} style={styles.headerBtn}>
-          <Text style={styles.headerBtnIcon}>↺</Text>
+        <TouchableOpacity onPress={handleClear} style={styles.headerBtn}>
+          <Text style={styles.headerBtnText}>🗑</Text>
         </TouchableOpacity>
       </View>
 
-      {/* API key warning banner (shown if key missing) */}
-      {!CLAUDE_API_KEY.trim() && (
-        <View style={styles.apiWarning}>
-          <Text style={styles.apiWarningText}>⚠️ Add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file to enable AI responses</Text>
-        </View>
-      )}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+      >
+        {/* Message List */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <MessageBubble item={item} />}
+          contentContainerStyle={styles.messageList}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateEmoji}>⚽</Text>
+              <Text style={styles.emptyStateTitle}>Your AI Coach is ready!</Text>
+              <Text style={styles.emptyStateSubtitle}>
+                Ask me anything about formations, drills, tactics, or player management.
+              </Text>
+            </View>
+          }
+          ListFooterComponent={
+            <>
+              {isTyping && <TypingIndicator />}
+              {/* Quick suggestions (show only when chat is empty) */}
+              {messages.length === 0 && !isTyping && (
+                <View style={styles.suggestionsContainer}>
+                  {QUICK_SUGGESTIONS.map((s, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={styles.suggestionChip}
+                      onPress={() => sendMessage(s)}
+                    >
+                      <Text style={styles.suggestionText}>{s}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </>
+          }
+        />
 
-      {/* Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MessageBubble item={item} />}
-        contentContainerStyle={styles.messagesList}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={isTyping ? <TypingDots /> : null}
-      />
+        {/* Retry banner */}
+        {retryPayload && (
+          <TouchableOpacity style={styles.retryBanner} onPress={() => sendMessage(retryPayload)}>
+            <Text style={styles.retryText}>↩ Tap to retry last message</Text>
+          </TouchableOpacity>
+        )}
 
-      {/* Quick actions */}
-      {showQuickActions && (
-        <View style={styles.quickSection}>
-          <Text style={styles.quickTitle}>QUICK START</Text>
-          <FlatList
-            data={QUICK_ACTIONS}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.label}
-            contentContainerStyle={styles.quickList}
-            renderItem={({ item }) => (
-              <Pressable
-                style={({ pressed }) => [styles.quickChip, pressed && styles.quickChipPressed]}
-                onPress={() => sendMessage(item.prompt)}
-              >
-                <Text style={styles.quickChipIcon}>{item.icon}</Text>
-                <Text style={styles.quickChipLabel}>{item.label}</Text>
-              </Pressable>
-            )}
-          />
-        </View>
-      )}
-
-      {/* Input */}
-      <View style={styles.inputSection}>
-        <View style={styles.inputRow}>
+        {/* Input area */}
+        <View style={styles.inputArea}>
           <TextInput
-            style={styles.textInput}
-            placeholder="Ask your coach anything..."
-            placeholderTextColor="#3d5166"
-            value={inputText}
-            onChangeText={setInputText}
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Ask your AI coach..."
+            placeholderTextColor="#475569"
             multiline
-            maxLength={600}
-            editable={!isTyping}
+            maxLength={2000}
             returnKeyType="send"
             onSubmitEditing={() => sendMessage()}
             blurOnSubmit={false}
           />
           <TouchableOpacity
-            style={[styles.sendBtn, (!inputText.trim() || isTyping) && styles.sendBtnOff]}
+            style={[styles.sendBtn, (!input.trim() || isTyping) && styles.sendBtnDisabled]}
             onPress={() => sendMessage()}
-            disabled={!inputText.trim() || isTyping}
-            activeOpacity={0.75}
+            disabled={!input.trim() || isTyping}
           >
-            {isTyping
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={styles.sendIcon}>▶</Text>
-            }
+            {isTyping ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.sendBtnText}>↑</Text>
+            )}
           </TouchableOpacity>
         </View>
-        <Text style={styles.sessionInfo}>
-          {`🤖 Claude AI · ${sessionCount} exchange${sessionCount !== 1 ? 's' : ''} this session`}
-        </Text>
-      </View>
-    </KeyboardAvoidingView>
+
+        {/* Rate limit reminder for free users */}
+        {!isVip && (
+          <TouchableOpacity
+            style={styles.upgradeHint}
+            onPress={() => router.push("/VIPSubscription")}
+          >
+            <Text style={styles.upgradeHintText}>
+              ✨ Free: 30 chats/hr · <Text style={styles.upgradeHintLink}>Upgrade to VIP</Text> for unlimited
+            </Text>
+          </TouchableOpacity>
+        )}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080e1a' },
-  centered: { justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#4fc3f7', marginTop: 16, fontSize: 15, fontWeight: '500' },
-
-  apiWarning: { backgroundColor: '#7f3800', paddingHorizontal: 14, paddingVertical: 8 },
-  apiWarningText: { color: '#ffcc80', fontSize: 11, textAlign: 'center', lineHeight: 16 },
-
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, backgroundColor: '#0b1220', borderBottomWidth: 1, borderBottomColor: '#162032' },
-  headerBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { color: '#4fc3f7', fontSize: 22, fontWeight: '700' },
-  headerBtnIcon: { color: '#4fc3f7', fontSize: 22, fontWeight: '700' },
-  headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  headerAvatarWrap: { position: 'relative' },
-  headerAvatar: { fontSize: 28 },
-  onlineDot: { position: 'absolute', bottom: 0, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: '#00e676', borderWidth: 2, borderColor: '#0b1220' },
-  headerTitle: { color: '#e8f0fc', fontSize: 16, fontWeight: '700' },
-  headerSub: { color: '#4fc3f7', fontSize: 10, marginTop: 1 },
-
-  messagesList: { padding: 14, paddingBottom: 10 },
-  messageRow: { flexDirection: 'row', marginVertical: 5, alignItems: 'flex-end' },
-  messageRowLeft: { justifyContent: 'flex-start' },
-  messageRowRight: { justifyContent: 'flex-end' },
-  coachAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#0d1f35', alignItems: 'center', justifyContent: 'center', marginRight: 7, marginBottom: 2, borderWidth: 1, borderColor: '#1e3a5f' },
-  playerAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#0d2040', alignItems: 'center', justifyContent: 'center', marginLeft: 7, marginBottom: 2 },
-  avatarEmoji: { fontSize: 15 },
-  messageBubble: { maxWidth: width * 0.74, padding: 13, borderRadius: 20 },
-  coachBubble: { backgroundColor: '#0d1e33', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#1b3352' },
-  playerBubble: { backgroundColor: '#1246a0', borderBottomRightRadius: 4 },
-  senderLabel: { color: '#4fc3f7', fontSize: 10, fontWeight: '800', letterSpacing: 1, marginBottom: 5 },
-  messageText: { fontSize: 15, lineHeight: 23 },
-  coachText: { color: '#dce8f8' },
-  playerText: { color: '#fff' },
-  timeText: { fontSize: 10, marginTop: 5, opacity: 0.5 },
-  timeLeft: { color: '#6fa8c9' },
-  timeRight: { color: '#9dc4e8' },
-
-  typingContainer: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 14, paddingBottom: 6, marginTop: 4 },
-  typingAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#0d1f35', alignItems: 'center', justifyContent: 'center', marginRight: 7, borderWidth: 1, borderColor: '#1e3a5f' },
-  typingBubble: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#0d1e33', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#1b3352' },
-  typingLabel: { color: '#4fc3f7', fontSize: 12, fontWeight: '600' },
-  dotsRow: { flexDirection: 'row', alignItems: 'center' },
-
-  quickSection: { borderTopWidth: 1, borderTopColor: '#162032', paddingVertical: 10 },
-  quickTitle: { color: '#2d4a60', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, paddingHorizontal: 16, marginBottom: 8 },
-  quickList: { paddingHorizontal: 12, gap: 8 },
-  quickChip: { backgroundColor: '#0d1e33', borderWidth: 1, borderColor: '#1b3352', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 9, alignItems: 'center', gap: 4, minWidth: 78 },
-  quickChipPressed: { backgroundColor: '#162840', borderColor: '#4fc3f7' },
-  quickChipIcon: { fontSize: 19 },
-  quickChipLabel: { color: '#6fa8c9', fontSize: 11, fontWeight: '600' },
-
-  inputSection: { borderTopWidth: 1, borderTopColor: '#162032', backgroundColor: '#0b1220', paddingHorizontal: 12, paddingTop: 10, paddingBottom: 18 },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
-  textInput: { flex: 1, backgroundColor: '#0d1e33', color: '#dce8f8', paddingHorizontal: 16, paddingVertical: 13, borderRadius: 24, fontSize: 15, maxHeight: 120, lineHeight: 22, borderWidth: 1, borderColor: '#1b3352' },
-  sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#1246a0', alignItems: 'center', justifyContent: 'center' },
-  sendBtnOff: { backgroundColor: '#162032' },
-  sendIcon: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  sessionInfo: { color: '#233344', fontSize: 10, textAlign: 'center', marginTop: 7 },
+  container: { flex: 1, backgroundColor: "#0F172A" },
+  centered: { justifyContent: "center", alignItems: "center" },
+  // Header
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E293B",
+  },
+  headerBtn: { padding: 8, minWidth: 40 },
+  headerBtnText: { color: "#94A3B8", fontSize: 20 },
+  headerCenter: { flex: 1, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 8 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: "#F1F5F9" },
+  headerVipBadge: {
+    backgroundColor: "#FCD34D",
+    color: "#78350F",
+    fontSize: 10,
+    fontWeight: "900",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  // Messages
+  messageList: { padding: 16, paddingBottom: 8 },
+  bubbleWrapper: { flexDirection: "row", marginBottom: 12, alignItems: "flex-end", gap: 8 },
+  bubbleWrapperUser: { justifyContent: "flex-end" },
+  bubbleWrapperAI: { justifyContent: "flex-start" },
+  aiAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#1E293B",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiAvatarText: { fontSize: 16 },
+  bubble: {
+    maxWidth: "75%",
+    borderRadius: 18,
+    padding: 12,
+    paddingHorizontal: 16,
+  },
+  bubbleUser: { backgroundColor: "#2563EB", borderBottomRightRadius: 4 },
+  bubbleAI: { backgroundColor: "#1E293B", borderBottomLeftRadius: 4 },
+  bubbleError: { backgroundColor: "#7F1D1D" },
+  bubbleText: { fontSize: 15, lineHeight: 22 },
+  bubbleTextUser: { color: "#EFF6FF" },
+  bubbleTextAI: { color: "#E2E8F0" },
+  bubbleTime: { fontSize: 10, color: "#64748B", marginTop: 4, textAlign: "right" },
+  // Typing indicator
+  typingWrapper: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 12, paddingHorizontal: 16 },
+  typingBubble: {
+    flexDirection: "row",
+    gap: 4,
+    backgroundColor: "#1E293B",
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  typingDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: "#64748B" },
+  // Empty state
+  emptyState: { alignItems: "center", paddingVertical: 48, paddingHorizontal: 32 },
+  emptyStateEmoji: { fontSize: 48, marginBottom: 16 },
+  emptyStateTitle: { fontSize: 20, fontWeight: "700", color: "#E2E8F0", marginBottom: 8 },
+  emptyStateSubtitle: { fontSize: 14, color: "#64748B", textAlign: "center", lineHeight: 20 },
+  // Suggestions
+  suggestionsContainer: { paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
+  suggestionChip: {
+    backgroundColor: "#1E293B",
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  suggestionText: { color: "#94A3B8", fontSize: 13 },
+  // Retry
+  retryBanner: {
+    backgroundColor: "#7F1D1D",
+    padding: 10,
+    alignItems: "center",
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  retryText: { color: "#FCA5A5", fontSize: 13, fontWeight: "600" },
+  // Input area
+  inputArea: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#1E293B",
+  },
+  input: {
+    flex: 1,
+    backgroundColor: "#1E293B",
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    color: "#F1F5F9",
+    fontSize: 15,
+    maxHeight: 120,
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#2563EB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendBtnDisabled: { opacity: 0.4 },
+  sendBtnText: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  // Upgrade hint
+  upgradeHint: { paddingVertical: 8, alignItems: "center" },
+  upgradeHintText: { color: "#475569", fontSize: 12 },
+  upgradeHintLink: { color: "#60A5FA", fontWeight: "700" },
 });

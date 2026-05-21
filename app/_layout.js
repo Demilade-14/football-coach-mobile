@@ -1,34 +1,38 @@
-import React from 'react';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Text } from 'react-native';
+﻿// app/_layout.js
+import { Stack } from "expo-router";
+import { SubscriptionProvider } from "../src/context/SubscriptionContext";
+
 export default function RootLayout() {
   return (
-    <>
-      <StatusBar style="light" />
+    // ✅ MUST wrap with SubscriptionProvider for useSubscription to work
+    <SubscriptionProvider>
       <Stack
         screenOptions={{
-          headerStyle: {
-            backgroundColor: '#0d1b2a',
-          },
-          headerTintColor: '#ffd700',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerShown: false,
+          contentStyle: { backgroundColor: "#0F172A" },
         }}
       >
-        <Stack.Screen 
-          name="index" 
-          options={{ 
-            title: 'Football Coach',
-            headerLeft: () => <Text style={{ marginLeft: 15, fontSize: 20 }}>?</Text>,
-          }} 
+        {/* Your existing screens */}
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+        
+        {/* ✅ Add new screens */}
+        <Stack.Screen
+          name="VIPSubscription"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            headerShown: false,
+          }}
         />
-        <Stack.Screen name="AuthScreen" options={{ title: 'Authentication', headerShown: false }} />
-        <Stack.Screen name="ProfileForm" options={{ title: 'Create Player Card', headerBackTitle: 'Back' }} />
-        <Stack.Screen name="PlayerCardScreen" options={{ title: 'Player Card', headerBackTitle: 'Back' }} />
-        <Stack.Screen name="HallOfFame" options={{ title: 'Hall of Fame', headerBackTitle: 'Back' }} />
+        <Stack.Screen
+          name="AICoach"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
       </Stack>
-    </>
+    </SubscriptionProvider>
   );
 }

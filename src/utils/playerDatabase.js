@@ -1,145 +1,184 @@
-﻿// In-memory player storage
-const _players = [];
-// FC 26 Accurate Overall Rating Calculation
-export const calculateOverall = (attrs, age = 15, position = 'ST') => {
-  if (!attrs) return 50;
-  // FC 26 uses weighted stats based on position
-  const positionWeights = {
-    'GK': { diving: 0.25, handling: 0.25, kicking: 0.15, positioning: 0.20, reflexes: 0.15 },
-    'CB': { defending: 0.35, physical: 0.25, pace: 0.15, passing: 0.15, shooting: 0.10 },
-    'LB': { defending: 0.30, pace: 0.25, physical: 0.15, passing: 0.20, shooting: 0.10 },
-    'RB': { defending: 0.30, pace: 0.25, physical: 0.15, passing: 0.20, shooting: 0.10 },
-    'CDM': { defending: 0.30, passing: 0.30, physical: 0.20, pace: 0.10, shooting: 0.10 },
-    'CM': { passing: 0.30, defending: 0.25, physical: 0.20, pace: 0.15, shooting: 0.10 },
-    'CAM': { passing: 0.35, shooting: 0.25, dribbling: 0.20, physical: 0.10, pace: 0.10 },
-    'LW': { pace: 0.30, dribbling: 0.25, shooting: 0.25, passing: 0.15, physical: 0.05 },
-    'RW': { pace: 0.30, dribbling: 0.25, shooting: 0.25, passing: 0.15, physical: 0.05 },
-    'LM': { pace: 0.25, passing: 0.25, dribbling: 0.20, defending: 0.15, physical: 0.15 },
-    'RM': { pace: 0.25, passing: 0.25, dribbling: 0.20, defending: 0.15, physical: 0.15 },
-    'ST': { shooting: 0.35, pace: 0.25, dribbling: 0.20, physical: 0.15, passing: 0.05 },
-    'CF': { shooting: 0.30, pace: 0.25, dribbling: 0.20, passing: 0.15, physical: 0.10 },
-  };
-  const weights = positionWeights[position] || positionWeights['ST'];
-  // Calculate category ratings (0-99 scale)
-  const pace = Math.min(99, Math.max(1, 
-    (attrs.acceleration + attrs.sprintSpeed) / 2
-  ));
-  const shooting = Math.min(99, Math.max(1,
-    (attrs.finishing + attrs.shotPower + attrs.longShots + attrs.volleys + attrs.penalties) / 5
-  ));
-  const passing = Math.min(99, Math.max(1,
-    (attrs.vision + attrs.crossing + attrs.shortPassing + attrs.longPassing + attrs.curve) / 5
-  ));
-  const dribbling = Math.min(99, Math.max(1,
-    (attrs.agility + attrs.balance + attrs.reactions + attrs.ballControl + attrs.dribbling + attrs.composure) / 6
-  ));
-  const defending = Math.min(99, Math.max(1,
-    (attrs.interceptions + attrs.headingAccuracy + attrs.marking + attrs.standingTackle + attrs.slidingTackle) / 5
-  ));
-  const physical = Math.min(99, Math.max(1,
-    (attrs.jumping + attrs.stamina + attrs.strength + attrs.aggression) / 4
-  ));
-  // Calculate overall based on position weights
-  let overall = 0;
-  if (position === 'GK') {
-    overall = (
-      attrs.diving * 0.25 +
-      attrs.handling * 0.25 +
-      attrs.kicking * 0.15 +
-      attrs.positioning * 0.20 +
-      attrs.reflexes * 0.15
-    );
-  } else {
-    overall = (
-      pace * (weights.pace || 0) +
-      shooting * (weights.shooting || 0) +
-      passing * (weights.passing || 0) +
-      dribbling * (weights.dribbling || 0) +
-      defending * (weights.defending || 0) +
-      physical * (weights.physical || 0)
-    );
-  }
-  // Apply age modifier (FC 26 style)
-  let ageModifier = 1.0;
-  if (age < 18) ageModifier = 0.85 + (age - 14) * 0.025;
-  else if (age > 32) ageModifier = 1.0 - (age - 32) * 0.015;
-  overall = Math.round(overall * ageModifier);
-  return Math.min(99, Math.max(40, overall));
-};
-// Get position based on stats (FC 26 logic)
-export const recommendPosition = (attrs, age = 15, preferredFoot = 'Right') => {
-  if (!attrs) return 'ST';
-  const pace = (attrs.acceleration + attrs.sprintSpeed) / 2;
-  const shooting = (attrs.finishing + attrs.shotPower) / 2;
-  const passing = (attrs.shortPassing + attrs.longPassing + attrs.vision) / 3;
-  const dribbling = (attrs.dribbling + attrs.ballControl + attrs.agility) / 3;
-  const defending = (attrs.marking + attrs.standingTackle + attrs.interceptions) / 3;
-  const physical = (attrs.strength + attrs.stamina + attrs.aggression) / 3;
-  // Goalkeeper check
-  if (attrs.diving > 70 && attrs.handling > 70 && attrs.reflexes > 70) {
-    return 'GK';
-  }
-  // Defender check
-  if (defending > 70 && physical > 65) {
-    if (pace > 75) return 'LB';
-    if (pace > 70) return 'CB';
-    return 'CB';
-  }
-  // Midfielder check
-  if (passing > 70 && defending > 60) {
-    if (pace > 75 && dribbling > 70) return 'CAM';
-    if (defending > 70) return 'CDM';
-    return 'CM';
-  }
-  // Attacker check
-  if (shooting > 70 || pace > 75) {
-    if (pace > 80 && dribbling > 75) return 'LW';
-    if (shooting > 75 && physical > 70) return 'ST';
-    if (pace > 75 && passing > 65) return 'RW';
-    return 'ST';
-  }
-  return 'CM';
-};
-// Get card type based on rating (FC 26 style)
-export const getCardType = (overall) => {
-  if (overall >= 90) return { type: 'TOTY', color: '#0066CC', glow: '#00CCFF' };
-  if (overall >= 87) return { type: 'TOTS', color: '#FF6600', glow: '#FF9900' };
-  if (overall >= 85) return { type: 'TOTW', color: '#CC9900', glow: '#FFCC00' };
-  if (overall >= 80) return { type: 'Gold Rare', color: '#D4AF37', glow: '#FFD700' };
-  if (overall >= 75) return { type: 'Gold', color: '#B8860B', glow: '#DAA520' };
-  if (overall >= 70) return { type: 'Silver Rare', color: '#C0C0C0', glow: '#E8E8E8' };
-  return { type: 'Bronze', color: '#CD7F32', glow: '#D2691E' };
-};
-// Save player
-export const savePlayer = async (playerData) => {
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PLAYERS_KEY = '@football_coach_players';
+const MAX_FREE_PLAYERS = 5;
+
+/**
+ * Save a player to AsyncStorage
+ */
+export const savePlayer = async (player) => {
   try {
-    if (!playerData.id) {
-      playerData.id = Date.now().toString();
-    }
-    playerData.createdAt = new Date().toISOString();
-    _players.push(playerData);
-    return { success: true, data: playerData };
+    const existingPlayers = await getAllPlayers();
+    const updatedPlayers = [...existingPlayers, player];
+    await AsyncStorage.setItem(PLAYERS_KEY, JSON.stringify(updatedPlayers));
+    return { success: true, player };
   } catch (error) {
+    console.error('Error saving player:', error);
     return { success: false, error: error.message };
   }
 };
-// Get all players
-export const getAllPlayers = () => [..._players];
-// Get top players
-export const getTopPlayers = (limit = 10) => {
-  return [..._players]
-    .sort((a, b) => (b.overall || 0) - (a.overall || 0))
-    .slice(0, limit);
-};
-// Delete player
-export const deletePlayer = (id) => {
-  const index = _players.findIndex(p => p.id === id);
-  if (index !== -1) {
-    return _players.splice(index, 1)[0];
+
+/**
+ * Get all players from AsyncStorage
+ */
+export const getAllPlayers = async () => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(PLAYERS_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : [];
+  } catch (error) {
+    console.error('Error loading players:', error);
+    return [];
   }
-  return null;
 };
-// Get total count
-export const getTotalPlayersCount = () => _players.length;
-// Check if can save more (free tier: 5 max)
-export const canSaveMorePlayers = (currentCount) => currentCount < 5;
+
+/**
+ * Get a single player by ID
+ */
+export const getPlayerById = async (id) => {
+  try {
+    const players = await getAllPlayers();
+    return players.find(p => p.id === id) || null;
+  } catch (error) {
+    console.error('Error getting player:', error);
+    return null;
+  }
+};
+
+/**
+ * Update a player
+ */
+export const updatePlayer = async (id, updates) => {
+  try {
+    const players = await getAllPlayers();
+    const index = players.findIndex(p => p.id === id);
+    if (index === -1) {
+      return { success: false, error: 'Player not found' };
+    }
+    players[index] = { ...players[index], ...updates, updatedAt: new Date().toISOString() };
+    await AsyncStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+    return { success: true, player: players[index] };
+  } catch (error) {
+    console.error('Error updating player:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Delete a player
+ */
+export const deletePlayer = async (id) => {
+  try {
+    const players = await getAllPlayers();
+    const filtered = players.filter(p => p.id !== id);
+    await AsyncStorage.setItem(PLAYERS_KEY, JSON.stringify(filtered));
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting player:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get total player count
+ */
+export const getTotalPlayersCount = async () => {
+  try {
+    const players = await getAllPlayers();
+    return players.length;
+  } catch (error) {
+    console.error('Error counting players:', error);
+    return 0;
+  }
+};
+
+/**
+ * Check if user can save more players (free tier limit)
+ */
+export const canSaveMorePlayers = async (currentCount = null) => {
+  try {
+    const count = currentCount !== null ? currentCount : await getTotalPlayersCount();
+    return count < MAX_FREE_PLAYERS;
+  } catch (error) {
+    console.error('Error checking player limit:', error);
+    return false;
+  }
+};
+
+/**
+ * Get improvement tips based on position and attributes
+ */
+export const getImprovementTips = (position, attrs, options = {}) => {
+  const tips = [];
+  const get = (key) => Number(attrs[key]) || 0;
+
+  if (position === 'GK' || position === 'Goalkeeper' || position === 'Goalkeeping') {
+    // GK-specific tips
+    if (get('diving') < 60) tips.push('Improve diving to save low shots');
+    if (get('handling') < 60) tips.push('Work on handling to catch crosses');
+    if (get('reflexes') < 60) tips.push('Train reflexes for quick saves');
+    if (get('kicking') < 60) tips.push('Practice distribution and kicking');
+    if (get('positioning') < 60) tips.push('Study positioning for better angles');
+  } else {
+    // Outfield tips
+    if (get('finishing') < 60) tips.push('Practice finishing in the box');
+    if (get('shotPower') < 60) tips.push('Work on shot power');
+    if (get('dribbling') < 60) tips.push('Improve ball control and dribbling');
+    if (get('passing') < 60) tips.push('Focus on passing accuracy');
+    if (get('pace') < 60) tips.push('Train speed and acceleration');
+    if (get('defending') < 60) tips.push('Work on tackling and positioning');
+  }
+
+  // General tips
+  if (get('stamina') < 60) tips.push('Build stamina for 90-minute performance');
+  if (get('strength') < 60) tips.push('Increase strength for physical battles');
+  if (get('composure') < 60) tips.push('Stay calm under pressure');
+
+  // Support-specific tips
+  if (options.disability) {
+    tips.push('Adaptive training programs available');
+  }
+  if (options.mentalStress) {
+    tips.push('Mental conditioning exercises recommended');
+  }
+
+  return tips.length > 0 ? tips : ['Keep training consistently!'];
+};
+/**
+ * Determine card type/tier based on overall rating
+ * Used for visual styling and filtering
+ */
+export const getCardType = (overall) => {
+  if (!overall || overall < 40) return 'rookie';
+  if (overall < 55) return 'iron';
+  if (overall < 65) return 'bronze';
+  if (overall < 75) return 'silver';
+  if (overall < 80) return 'gold';
+  if (overall < 85) return 'elite';
+  return 'icon';
+};
+
+/**
+ * Get card color based on type
+ */
+export const getCardColor = (type) => {
+  const colors = {
+    rookie: '#78909c',
+    iron:   '#ef5350',
+    bronze: '#cd7f32',
+    silver: '#90a4ae',
+    gold:   '#ffa726',
+    elite:  '#ffd700',
+    icon:   '#9b59b6',
+  };
+  return colors[type] || colors.rookie;
+};
+export default {
+  savePlayer,
+  getAllPlayers,
+  getPlayerById,
+  updatePlayer,
+  deletePlayer,
+  getTotalPlayersCount,
+  canSaveMorePlayers,
+  getImprovementTips,
+};
