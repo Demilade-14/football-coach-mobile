@@ -14,38 +14,17 @@ let auth = null;
 let db = null;
 let isFirebaseInitialized = false;
 let firebaseInitError = null;
-const initFirebase = () => {
-  try {
-    console.log("🔥 Starting Firebase init...");
-    console.log("Platform:", Platform.OS);
-    const app = getApps().length === 0 
-      ? initializeApp(FIREBASE_CONFIG) 
-      : getApp();
-    console.log("✅ Firebase app ready");
-    if (Platform.OS === "web") {
-      auth = getAuth(app);
-      console.log("✅ Web auth ready");
-    } else {
-      try {
-        const AsyncStorage = require("@react-native-async-storage/async-storage").default;
-        console.log("✅ AsyncStorage loaded");
-        auth = initializeAuth(app, {
-          persistence: getReactNativePersistence(AsyncStorage),
-        });
-        console.log("✅ Native auth ready");
-      } catch (authError) {
-        console.log("⚠️ initializeAuth error:", authError.code, authError.message);
-        auth = getAuth(app);
-        console.log("✅ Fallback auth ready");
-      }
-    }
-    db = getFirestore(app);
-    isFirebaseInitialized = true;
-    console.log("✅ Firebase fully initialized. Auth:", auth ? "OK" : "NULL");
-  } catch (error) {
-    firebaseInitError = error;
-    console.error("❌ Firebase init failed:", error.code, error.message);
-  }
-};
-initFirebase();
+try {
+  const app = getApps().length === 0
+    ? initializeApp(FIREBASE_CONFIG)
+    : getApp();
+  // Use getAuth for ALL platforms - simplest and most reliable
+  auth = getAuth(app);
+  db = getFirestore(app);
+  isFirebaseInitialized = true;
+  console.log("✅ Firebase initialized. Auth:", auth ? "OK" : "NULL");
+} catch (error) {
+  firebaseInitError = error;
+  console.error("❌ Firebase init failed:", error.message);
+}
 export { auth, db, isFirebaseInitialized, firebaseInitError };
