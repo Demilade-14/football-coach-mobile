@@ -14,34 +14,38 @@ let auth = null;
 let db = null;
 let isFirebaseInitialized = false;
 let firebaseInitError = null;
-try {
-  // Only initialize app if not already initialized
-  const app = getApps().length === 0 ? initializeApp(FIREBASE_CONFIG) : getApp();
-  if (Platform.OS === "web") {
-    // Web - just use getAuth (always safe to call multiple times)
-    auth = getAuth(app);
-  } else {
-    // Android/iOS - must use initializeAuth with AsyncStorage
-    // But getAuth() after initializeAuth() also works - use try/catch
-    try {
-      const AsyncStorage = require("@react-native-async-storage/async-storage").default;
-      auth = initializeAuth(app, {
-        persistence: getReactNativePersistence(AsyncStorage),
-      });
-    } catch (authError) {
-      // initializeAuth throws if already called - fall back to getAuth
-      if (authError.code === "auth/already-initialized" || authError.message?.includes("already")) {
+const initFirebase = () => {
+  try {
+    console.log("🔥 Starting Firebase init...");
+    console.log("Platform:", Platform.OS);
+    const app = getApps().length === 0 
+      ? initializeApp(FIREBASE_CONFIG) 
+      : getApp();
+    console.log("✅ Firebase app ready");
+    if (Platform.OS === "web") {
+      auth = getAuth(app);
+      console.log("✅ Web auth ready");
+    } else {
+      try {
+        const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+        console.log("✅ AsyncStorage loaded");
+        auth = initializeAuth(app, {
+          persistence: getReactNativePersistence(AsyncStorage),
+        });
+        console.log("✅ Native auth ready");
+      } catch (authError) {
+        console.log("⚠️ initializeAuth error:", authError.code, authError.message);
         auth = getAuth(app);
-      } else {
-        throw authError;
+        console.log("✅ Fallback auth ready");
       }
     }
+    db = getFirestore(app);
+    isFirebaseInitialized = true;
+    console.log("✅ Firebase fully initialized. Auth:", auth ? "OK" : "NULL");
+  } catch (error) {
+    firebaseInitError = error;
+    console.error("❌ Firebase init failed:", error.code, error.message);
   }
-  db = getFirestore(app);
-  isFirebaseInitialized = true;
-  console.log("✅ Firebase initialized successfully");
-} catch (error) {
-  firebaseInitError = error;
-  console.error("❌ Firebase initialization error:", error.message);
-}
+};
+initFirebase();
 export { auth, db, isFirebaseInitialized, firebaseInitError };
