@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "797090821026",
+    "project_id": "football-coach-mobile",
+    "storage_bucket": "football-coach-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797090821026:android:3d0520c60654124b8cf8fb",
+        "android_client_info": {
+          "package_name": "com.zeedain14.footballcoachmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdQ-WKhqmkQo5BJWs3QpMRwJfW9h4HK1Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
