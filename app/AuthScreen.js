@@ -5,20 +5,12 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-let firebaseAuth = null;
-let signInFn = null;
-let createUserFn = null;
-let updateProfileFn = null;
-try {
-  const firebaseModule = require("../src/utils/firebaseConfig");
-  const authModule = require("firebase/auth");
-  firebaseAuth = firebaseModule.auth;
-  signInFn = authModule.signInWithEmailAndPassword;
-  createUserFn = authModule.createUserWithEmailAndPassword;
-  updateProfileFn = authModule.updateProfile;
-} catch (e) {
-  console.log("Firebase not available:", e.message);
-}
+import { auth } from "../src/utils/firebaseConfig";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
 const AuthScreen = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -49,14 +41,14 @@ const AuthScreen = () => {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
-    if (!firebaseAuth || !signInFn) {
-      Alert.alert("Error", "Authentication not available. Please use guest mode.");
+    if (!auth) {
+      Alert.alert("Error", "Firebase not initialized. Please restart the app or use guest mode.");
       return;
     }
     setLoading(true);
     try {
       if (isLogin) {
-        const userCredential = await signInFn(firebaseAuth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         await AsyncStorage.setItem("user", JSON.stringify({
           uid: user.uid,
@@ -65,10 +57,10 @@ const AuthScreen = () => {
         }));
         router.replace("/");
       } else {
-        const userCredential = await createUserFn(firebaseAuth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        if (name && updateProfileFn) {
-          await updateProfileFn(user, { displayName: name });
+        if (name) {
+          await updateProfile(user, { displayName: name });
         }
         await AsyncStorage.setItem("user", JSON.stringify({
           uid: user.uid,
@@ -79,8 +71,9 @@ const AuthScreen = () => {
         router.replace("/");
       }
     } catch (error) {
-      console.error("Auth error:", error);
-      let errorMessage = "Invalid email or password. Please check and try again.";
+      console.error("Auth error code:", error.code);
+      console.error("Auth error message:", error.message);
+      let errorMessage = error.code + ": " + error.message;
       if (error.code === "auth/email-already-in-use") {
         errorMessage = "Email already registered. Please login instead.";
       } else if (error.code === "auth/invalid-email") {
@@ -89,10 +82,14 @@ const AuthScreen = () => {
         errorMessage = "Password too weak. Use at least 6 characters.";
       } else if (error.code === "auth/network-request-failed") {
         errorMessage = "No internet connection. Please check your network.";
-      } else if (error.code === "auth/invalid-credential") {
+      } else if (error.code === "auth/invalid-credential" || error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
         errorMessage = "Invalid email or password. Please check and try again.";
+      } else if (error.code === "auth/operation-not-allowed") {
+        errorMessage = "Email login is disabled in Firebase Console.";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many attempts. Please wait a few minutes.";
       }
-      Alert.alert("Authentication Error", errorMessage);
+      Alert.alert("Auth Error", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -135,7 +132,7 @@ const AuthScreen = () => {
             style={styles.eyeIcon}
             onPress={() => setShowPassword(!showPassword)}
           >
-            <Text style={styles.eyeText}>{showPassword ? "👁" : "🙈"}</Text>
+            <Text style={styles.eyeText}>{showPassword ? "👁" : "🔒"}</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity
