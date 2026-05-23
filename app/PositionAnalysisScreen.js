@@ -73,7 +73,7 @@ export default function PositionAnalysisScreen() {
         <Text style={styles.title}>Position Analysis</Text>
         <Text style={styles.noData}>No player data available</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>â† Back</Text>
+          <Text style={styles.backButtonText}>† Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -87,7 +87,7 @@ export default function PositionAnalysisScreen() {
       <Text style={styles.playerName}>{player.name}</Text>
 
       <View style={styles.recommendationCard}>
-        <Text style={styles.cardTitle}>ðŸŽ¯ Best Positions</Text>
+        <Text style={styles.cardTitle}>🎯 Best Positions</Text>
         {recommendations.map(([position, score], index) => (
           <View key={position} style={styles.recommendationItem}>
             <Text style={styles.positionRank}>#{index + 1}</Text>
@@ -114,7 +114,7 @@ export default function PositionAnalysisScreen() {
       </View>
 
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backButtonText}>â† Back to Player Card</Text>
+        <Text style={styles.backButtonText}>† Back to Player Card</Text>
       </TouchableOpacity>
     </ScrollView>
   );

@@ -36,14 +36,14 @@ export default function NotificationScreen() {
     try {
       // Mark as read FIRST (before navigation)
       await markAsRead(notification.id);
-      console.log('âœ… Marked as read:', notification.id);
+      console.log('œ… Marked as read:', notification.id);
 
-      // Navigate based on type â€” WITHOUT passing complex data
+      // Navigate based on type €” WITHOUT passing complex data
       switch (notification.type) {
         case 'reminder':
         case 'tip':
           console.log('ðŸ”„ Navigating to TrainingPlanScreen...');
-          // Just navigate â€” let TrainingPlanScreen load its own data
+          // Just navigate €” let TrainingPlanScreen load its own data
           router.push('/TrainingPlanScreen');
           break;
           
@@ -58,23 +58,23 @@ export default function NotificationScreen() {
           router.push('/');
       }
     } catch (error) {
-      console.error('âŒ Failed handling notification:', error);
+      console.error('Œ Failed handling notification:', error);
       Alert.alert(
         'Navigation Error',
         'Could not open the requested screen. Please try again.',
         [{ text: 'OK' }]
       );
     }
-    // NOTE: Don't call loadNotifications() here â€” it causes re-render during navigation
+    // NOTE: Don't call loadNotifications() here €” it causes re-render during navigation
     // The screen will refresh automatically when you come back
   };
 
   const getIcon = (type) => {
     switch (type) {
       case 'achievement': return 'ðŸ†';
-      case 'reminder': return 'âš½';
+      case 'reminder': return 'š½';
       case 'tip': return 'ðŸ’¡';
-      case 'milestone': return 'â­';
+      case 'milestone': return '­';
       default: return 'ðŸ“¢';
     }
   };
@@ -96,7 +96,7 @@ export default function NotificationScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
-          <Text style={[styles.backButton, isLoading && styles.disabled]}>â† Back</Text>
+          <Text style={[styles.backButton, isLoading && styles.disabled]}>† Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>ðŸ”” Notifications</Text>
       </View>
@@ -124,7 +124,7 @@ export default function NotificationScreen() {
               <View style={styles.content}>
                 <Text style={styles.message}>{notification.message}</Text>
                 <Text style={styles.time}>
-                  {new Date(notification.timestamp).toLocaleDateString()} â€¢ {new Date(notification.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  {new Date(notification.timestamp).toLocaleDateString()} €¢ {new Date(notification.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </Text>
               </View>
               {!notification.read && <View style={styles.dot} />}

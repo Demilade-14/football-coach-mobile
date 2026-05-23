@@ -81,9 +81,9 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>â† Back</Text>
+          <Text style={styles.backButton}>† Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>âš™ï¸ Settings</Text>
+        <Text style={styles.title}>š™ï¸ Settings</Text>
       </View>
 
       <ScrollView style={styles.content}>
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
           style={[styles.actionButton, styles.dangerButton]}
           onPress={handleDeleteAccount}
         >
-          <Text style={styles.actionIcon}>âš ï¸</Text>
+          <Text style={styles.actionIcon}>š ï¸</Text>
           <View style={styles.actionInfo}>
             <Text style={[styles.actionLabel, styles.dangerText]}>Delete Account</Text>
             <Text style={styles.actionDesc}>Permanently remove all data</Text>
@@ -202,7 +202,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.version}>Version 1.0.0</Text>
-          <Text style={styles.copyright}>Â© 2026 Football Coach</Text>
+          <Text style={styles.copyright}>© 2026 Football Coach</Text>
         </View>
       </ScrollView>
     </View>
@@ -231,3 +231,4 @@ const styles = StyleSheet.create({
   version: { fontSize: 12, color: '#a8dadc', marginBottom: 5 },
   copyright: { fontSize: 12, color: '#6c757d' },
 });
+

@@ -111,7 +111,7 @@ export default function SecurityPrivacyScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>â† Back</Text>
+          <Text style={styles.backButton}>† Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Security & Privacy</Text>
       </View>
@@ -180,7 +180,7 @@ export default function SecurityPrivacyScreen() {
 
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => Alert.alert('Login Activity', 'Recent logins:\n\nâ€¢ Today 2:30 PM - Mobile\nâ€¢ Yesterday 8:15 AM - Mobile\nâ€¢ Jan 25 6:45 PM - Mobile')}
+          onPress={() => Alert.alert('Login Activity', 'Recent logins:\n\n€¢ Today 2:30 PM - Mobile\n€¢ Yesterday 8:15 AM - Mobile\n€¢ Jan 25 6:45 PM - Mobile')}
         >
           <Text style={styles.buttonText}>View Login Activity</Text>
         </TouchableOpacity>
@@ -314,3 +314,4 @@ const styles = StyleSheet.create({
   footer: { alignItems: 'center', paddingVertical: 24, borderTopWidth: 1, borderTopColor: '#333', marginTop: 32 },
   footerText: { color: '#666', fontSize: 12 },
 });
+

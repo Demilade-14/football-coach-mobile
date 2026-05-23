@@ -156,7 +156,7 @@ Sent from Football Coach Mobile App
 
   const handleShareApp = () => {
     Share.share({
-      message: 'Check out Football Coach Mobile - The ultimate training app for young players! ðŸŽ¯âš½\n\nContact: muhammedajayi14@gmail.com',
+      message: 'Check out Football Coach Mobile - The ultimate training app for young players! ðŸŽ¯š½\n\nContact: muhammedajayi14@gmail.com',
       title: 'Football Coach Mobile',
     }).catch((error) => console.log(error));
   };
@@ -181,7 +181,7 @@ Sent from Football Coach Mobile App
             style={styles.starButton}
           >
             <Text style={[styles.star, rating >= star && styles.starFilled]}>
-              â˜…
+              ˜…
             </Text>
           </TouchableOpacity>
         ))}
@@ -193,7 +193,7 @@ Sent from Football Coach Mobile App
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>â† Back</Text>
+          <Text style={styles.backButton}>† Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Analytics & Feedback</Text>
       </View>
@@ -222,7 +222,7 @@ Sent from Football Coach Mobile App
           <View style={styles.divider} />
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>App Rating</Text>
-            <Text style={styles.statValue}>{rating > 0 ? `${rating}/5` : 'â€”'}</Text>
+            <Text style={styles.statValue}>{rating > 0 ? `${rating}/5` : '€”'}</Text>
           </View>
         </View>
       </View>
@@ -269,11 +269,11 @@ Sent from Football Coach Mobile App
           onPress={() => handleVote('multiLanguage')}
         >
           <View>
-            <Text style={styles.featureTitle}>â­ Multi-Language Support</Text>
+            <Text style={styles.featureTitle}>­ Multi-Language Support</Text>
             <Text style={styles.featureCount}>ðŸ‘¥ {votes.multiLanguage} votes</Text>
           </View>
           <Text style={[styles.voteButton, userVotes.multiLanguage && styles.voteButtonActive]}>
-            {userVotes.multiLanguage ? 'âœ“ Voted' : 'Vote'}
+            {userVotes.multiLanguage ? 'œ“ Voted' : 'Vote'}
           </Text>
         </TouchableOpacity>
 
@@ -286,7 +286,7 @@ Sent from Football Coach Mobile App
             <Text style={styles.featureCount}>ðŸ‘¥ {votes.videoTutorials} votes</Text>
           </View>
           <Text style={[styles.voteButton, userVotes.videoTutorials && styles.voteButtonActive]}>
-            {userVotes.videoTutorials ? 'âœ“ Voted' : 'Vote'}
+            {userVotes.videoTutorials ? 'œ“ Voted' : 'Vote'}
           </Text>
         </TouchableOpacity>
 
@@ -299,7 +299,7 @@ Sent from Football Coach Mobile App
             <Text style={styles.featureCount}>ðŸ‘¥ {votes.multiplayer} votes</Text>
           </View>
           <Text style={[styles.voteButton, userVotes.multiplayer && styles.voteButtonActive]}>
-            {userVotes.multiplayer ? 'âœ“ Voted' : 'Vote'}
+            {userVotes.multiplayer ? 'œ“ Voted' : 'Vote'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -534,3 +534,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+

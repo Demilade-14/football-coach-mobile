@@ -135,7 +135,7 @@ const AICoachScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>⬅️ {t.back}</Text>
+            <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.languageButton}
@@ -146,7 +146,7 @@ const AICoachScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.title}>🌟 {t.dailyWisdom}</Text>
+        <Text style={styles.title}>🌟 Inspirations</Text>
         <Text style={styles.subtitle}>{t.inspirationFrom}</Text>
         {/* Category Filter */}
         <ScrollView 
@@ -484,3 +484,4 @@ const styles = StyleSheet.create({
   },
   closeModalText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });
+
