@@ -1,4 +1,6 @@
 ﻿// app/PerformanceGraphsScreen.js
+// ✅ Fixed all garbled icons
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -61,7 +63,7 @@ export default function PerformanceGraphsScreen() {
 
     return (
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Training Minutes</Text>
+        <Text style={styles.chartTitle}>📊 Training Minutes</Text>
         <View style={styles.chart}>
           <View style={styles.yAxis}>
             <Text style={styles.axisLabel}>{maxMinutes}</Text>
@@ -96,7 +98,7 @@ export default function PerformanceGraphsScreen() {
 
     return (
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Training Sessions</Text>
+        <Text style={styles.chartTitle}>📈 Training Sessions</Text>
         <View style={styles.lineChart}>
           {data.map((item, index) => {
             const height = (item.sessions / maxSessions) * 60;
@@ -130,9 +132,9 @@ export default function PerformanceGraphsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>â† Back</Text>
+          <Text style={styles.backButton}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>ðŸ“ˆ Performance Graphs</Text>
+        <Text style={styles.title}>📈 Performance Graphs</Text>
       </View>
 
       <View style={styles.timeRangeContainer}>

@@ -1,135 +1,99 @@
-﻿// app/utils/exportSystem.js
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+﻿// src/utils/exportSystem.js
+// ✅ Minimal export functions - NO VIP/SUBSCRIPTION FEATURES
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/**
+ * Export all app data as JSON string (for copying/sharing)
+ */
 export const exportAllData = async () => {
   try {
-    const keys = await AsyncStorage.getAllKeys();
-    const data = {};
+    const players = await AsyncStorage.getItem('football_coach_players');
+    const sessions = await AsyncStorage.getItem('training_sessions');
     
-    for (const key of keys) {
-      const value = await AsyncStorage.getItem(key);
-      data[key] = value;
-    }
-
-    const jsonData = JSON.stringify(data, null, 2);
-    const fileName = `football_coach_backup_${new Date().toISOString().split('T')[0]}.json`;
-    const fileUri = FileSystem.documentDirectory + fileName;
-
-    await FileSystem.writeAsStringAsync(fileUri, jsonData);
+    const data = {
+      players: players ? JSON.parse(players) : [],
+      sessions: sessions ? JSON.parse(sessions) : [],
+      exportedAt: new Date().toISOString()
+    };
     
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(fileUri);
-    }
-
-    return { success: true, fileName };
+    // Return as JSON string - user can copy/share manually
+    return { 
+      success: true, 
+      data: JSON.stringify(data, null, 2),
+      message: 'Data exported successfully. Copy the JSON below:'
+    };
   } catch (error) {
-    console.error('Export failed:', error);
+    console.error('Export error:', error);
     return { success: false, error: error.message };
   }
 };
 
+/**
+ * Export training sessions as CSV string
+ */
 export const exportTrainingSessions = async () => {
   try {
-    const sessions = await AsyncStorage.getItem('training_sessions');
-    if (!sessions) {
-      return { success: false, error: 'No training data found' };
-    }
-
-    const parsed = JSON.parse(sessions);
-    const csv = convertToCSV(parsed);
-    const fileName = `training_sessions_${new Date().toISOString().split('T')[0]}.csv`;
-    const fileUri = FileSystem.documentDirectory + fileName;
-
-    await FileSystem.writeAsStringAsync(fileUri, csv);
+    const sessionsData = await AsyncStorage.getItem('training_sessions');
+    const sessions = sessionsData ? JSON.parse(sessionsData) : [];
     
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(fileUri);
+    if (sessions.length === 0) {
+      return { success: false, error: 'No training sessions to export' };
     }
-
-    return { success: true, fileName };
+    
+    // Create CSV content
+    const csvHeaders = 'Date,Duration (min),Type,Notes,Rating\n';
+    const csvRows = sessions.map(session => {
+      return `${session.date || ''},${session.duration || ''},${session.type || ''},"${session.notes || ''}",${session.rating || ''}`;
+    }).join('\n');
+    
+    return { 
+      success: true, 
+      data: csvHeaders + csvRows,
+      message: 'Sessions exported as CSV. Copy the text below:'
+    };
   } catch (error) {
-    console.error('Export failed:', error);
+    console.error('Export sessions error:', error);
     return { success: false, error: error.message };
   }
 };
 
-const convertToCSV = (data) => {
-  if (!data || data.length === 0) return '';
-  
-  const headers = Object.keys(data[0]).join(',');
-  const rows = data.map(row => 
-    Object.values(row).map(val => 
-      typeof val === 'string' && val.includes(',') ? `"${val}"` : val
-    ).join(',')
-  );
-  
-  return [headers, ...rows].join('\n');
-};
-
-export const importData = async (fileUri) => {
-  try {
-    const content = await FileSystem.readAsStringAsync(fileUri);
-    const data = JSON.parse(content);
-
-    for (const [key, value] of Object.entries(data)) {
-      await AsyncStorage.setItem(key, value);
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Import failed:', error);
-    return { success: false, error: error.message };
-  }
-};
-
+/**
+ * Generate simple progress report
+ */
 export const generateProgressReport = async () => {
   try {
-    const sessions = await AsyncStorage.getItem('training_sessions');
-    const user = await AsyncStorage.getItem('user');
+    const playersData = await AsyncStorage.getItem('football_coach_players');
+    const sessionsData = await AsyncStorage.getItem('training_sessions');
     
-    if (!sessions || !user) {
-      return { success: false, error: 'Insufficient data' };
-    }
-
-    const parsed = JSON.parse(sessions);
-    const userData = JSON.parse(user);
+    const players = playersData ? JSON.parse(playersData) : [];
+    const sessions = sessionsData ? JSON.parse(sessionsData) : [];
     
-    const totalSessions = parsed.length;
-    const totalMinutes = parsed.reduce((sum, s) => sum + parseInt(s.duration || 0), 0);
-    const totalHours = Math.floor(totalMinutes / 60);
+    const totalSessions = sessions.length;
+    const totalMinutes = sessions.reduce((sum, s) => sum + parseInt(s.duration || 0), 0);
+    const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
     
-    const report = `
-FOOTBALL COACH - PROGRESS REPORT
-Generated: ${new Date().toLocaleString()}
-
-PLAYER: ${userData.name}
-EMAIL: ${userData.email}
-
-TRAINING SUMMARY:
-- Total Sessions: ${totalSessions}
-- Total Training Time: ${totalHours}h ${totalMinutes % 60}m
-- Average Session: ${totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0} minutes
-
-RECENT ACTIVITY:
-${parsed.slice(0, 10).map(s => `- ${s.date}: ${s.activity} (${s.duration}min)`).join('\n')}
-
-Keep up the great work!
-    `.trim();
-
-    const fileName = `progress_report_${new Date().toISOString().split('T')[0]}.txt`;
-    const fileUri = FileSystem.documentDirectory + fileName;
-
-    await FileSystem.writeAsStringAsync(fileUri, report);
+    const report = {
+      summary: {
+        totalPlayers: players.length,
+        totalSessions,
+        totalHours,
+        generatedAt: new Date().toISOString()
+      },
+      players: players.map(p => ({
+        name: p.name,
+        position: p.position,
+        overall: p.overall
+      }))
+    };
     
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(fileUri);
-    }
-
-    return { success: true, fileName };
+    return { 
+      success: true, 
+      data: JSON.stringify(report, null, 2),
+      message: 'Report generated. Copy the JSON below:'
+    };
   } catch (error) {
-    console.error('Report generation failed:', error);
+    console.error('Report generation error:', error);
     return { success: false, error: error.message };
   }
 };

@@ -15,10 +15,10 @@ export default function VideoCallScreen() {
       alert('ðŸ“ž Connecting to coach... (In production, this would start a real video call!)');
       setTimeout(() => {
         setIsCalling(false);
-        alert('âœ… Call connected!');
+        alert('œ… Call connected!');
       }, 2000);
     } catch (error) {
-      alert('âŒ Failed to start call');
+      alert('Œ Failed to start call');
       setIsCalling(false);
     }
   };
@@ -42,7 +42,7 @@ export default function VideoCallScreen() {
         style={styles.backButton} 
         onPress={() => router.back()}
       >
-        <Text style={styles.backText}>â† Back to Chat</Text>
+        <Text style={styles.backText}>† Back to Chat</Text>
       </TouchableOpacity>
     </View>
   );

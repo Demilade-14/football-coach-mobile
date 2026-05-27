@@ -1,4 +1,6 @@
 ﻿// app/SettingsScreen.js
+// ✅ Fixed all garbled icons
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -81,9 +83,9 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>† Back</Text>
+          <Text style={styles.backButton}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>š™ï¸ Settings</Text>
+        <Text style={styles.title}>⚙️ Settings</Text>
       </View>
 
       <ScrollView style={styles.content}>
@@ -92,7 +94,7 @@ export default function SettingsScreen() {
         
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>ðŸ”” Notifications</Text>
+            <Text style={styles.settingLabel}>🔔 Notifications</Text>
             <Text style={styles.settingDesc}>Daily reminders and updates</Text>
           </View>
           <Switch
@@ -104,7 +106,7 @@ export default function SettingsScreen() {
 
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>ðŸŒ™ Dark Mode</Text>
+            <Text style={styles.settingLabel}>🌙 Dark Mode</Text>
             <Text style={styles.settingDesc}>Always enabled</Text>
           </View>
           <Switch
@@ -116,7 +118,7 @@ export default function SettingsScreen() {
 
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>ðŸ’¾ Auto Backup</Text>
+            <Text style={styles.settingLabel}>💾 Auto Backup</Text>
             <Text style={styles.settingDesc}>Weekly cloud backup</Text>
           </View>
           <Switch
@@ -130,7 +132,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>Data Management</Text>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleExportAll}>
-          <Text style={styles.actionIcon}>ðŸ“¦</Text>
+          <Text style={styles.actionIcon}>📦</Text>
           <View style={styles.actionInfo}>
             <Text style={styles.actionLabel}>Export All Data</Text>
             <Text style={styles.actionDesc}>Backup everything as JSON</Text>
@@ -138,7 +140,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleExportSessions}>
-          <Text style={styles.actionIcon}>ðŸ“Š</Text>
+          <Text style={styles.actionIcon}>📊</Text>
           <View style={styles.actionInfo}>
             <Text style={styles.actionLabel}>Export Training Sessions</Text>
             <Text style={styles.actionDesc}>Download as CSV spreadsheet</Text>
@@ -146,7 +148,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleGenerateReport}>
-          <Text style={styles.actionIcon}>ðŸ“„</Text>
+          <Text style={styles.actionIcon}>📄</Text>
           <View style={styles.actionInfo}>
             <Text style={styles.actionLabel}>Generate Progress Report</Text>
             <Text style={styles.actionDesc}>Detailed training summary</Text>
@@ -154,7 +156,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleClearCache}>
-          <Text style={styles.actionIcon}>ðŸ—‘ï¸</Text>
+          <Text style={styles.actionIcon}>🗑️</Text>
           <View style={styles.actionInfo}>
             <Text style={styles.actionLabel}>Clear Cache</Text>
             <Text style={styles.actionDesc}>Free up storage space</Text>
@@ -168,7 +170,7 @@ export default function SettingsScreen() {
           style={styles.actionButton}
           onPress={() => router.push('/PrivacyPolicyScreen')}
         >
-          <Text style={styles.actionIcon}>ðŸ”’</Text>
+          <Text style={styles.actionIcon}>🔒</Text>
           <View style={styles.actionInfo}>
             <Text style={styles.actionLabel}>Privacy Policy</Text>
             <Text style={styles.actionDesc}>How we protect your data</Text>
@@ -179,7 +181,7 @@ export default function SettingsScreen() {
           style={styles.actionButton}
           onPress={() => router.push('/TermsOfServiceScreen')}
         >
-          <Text style={styles.actionIcon}>ðŸ“œ</Text>
+          <Text style={styles.actionIcon}>📜</Text>
           <View style={styles.actionInfo}>
             <Text style={styles.actionLabel}>Terms of Service</Text>
             <Text style={styles.actionDesc}>Usage agreement</Text>
@@ -193,7 +195,7 @@ export default function SettingsScreen() {
           style={[styles.actionButton, styles.dangerButton]}
           onPress={handleDeleteAccount}
         >
-          <Text style={styles.actionIcon}>š ï¸</Text>
+          <Text style={styles.actionIcon}>⚠️</Text>
           <View style={styles.actionInfo}>
             <Text style={[styles.actionLabel, styles.dangerText]}>Delete Account</Text>
             <Text style={styles.actionDesc}>Permanently remove all data</Text>
@@ -231,4 +233,3 @@ const styles = StyleSheet.create({
   version: { fontSize: 12, color: '#a8dadc', marginBottom: 5 },
   copyright: { fontSize: 12, color: '#6c757d' },
 });
-

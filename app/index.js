@@ -77,7 +77,7 @@ export default function HomeScreen() {
           <Text style={styles.buttonIcon}>🎴</Text>
           <View style={styles.buttonContent}>
             <Text style={styles.buttonTitle}>Create Player Card</Text>
-            <Text style={styles.buttonDesc}>Build your FC26-style card</Text>
+            <Text style={styles.buttonDesc}>Build your card</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.blueButton} onPress={() => router.push("/HallOfFame")}>
@@ -151,14 +151,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
         {/* Settings */}
         <Text style={styles.sectionTitle}>⚙️ Settings</Text>
-        <TouchableOpacity style={styles.greenButton} onPress={() => router.push("/PlayerCardScreen")}>
-          <Text style={styles.buttonIcon}>🃏</Text>
-          <View style={styles.buttonContent}>
-            <Text style={styles.buttonTitle}>My Player Cards</Text>
-            <Text style={styles.buttonDesc}>View and share your cards</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.greenButton} onPress={() => router.push("/SettingsScreen")}>
+                <TouchableOpacity style={styles.greenButton} onPress={() => router.push("/SettingsScreen")}>
           <Text style={styles.buttonIcon}>⚙️</Text>
           <View style={styles.buttonContent}>
             <Text style={styles.buttonTitle}>Settings</Text>

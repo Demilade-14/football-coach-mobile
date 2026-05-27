@@ -1007,12 +1007,26 @@ const ProfileForm = () => {
 export default ProfileForm;
 
 const COUNTRIES = [
-  'Afghanistan','Albania','Algeria','Argentina','Australia','Austria',
-  'Belgium','Brazil','Canada','China','Denmark','Egypt','England',
-  'France','Germany','Ghana','India','Italy','Japan','Mexico','Netherlands',
-  'Nigeria','Norway','Poland','Portugal','Russia','Saudi Arabia',
-  'Scotland','Senegal','South Africa','South Korea','Spain','Sweden',
-  'Switzerland','Turkey','Ukraine','United States','Wales',
+  'Afghanistan','Albania','Algeria','Argentina','Armenia','Australia','Austria',
+'Azerbaijan','Bahrain','Bangladesh','Belarus','Belgium','Bolivia','Bosnia and Herzegovina',
+'Brazil','Bulgaria','Burkina Faso','Cameroon','Canada','Chile','China','Colombia',
+'Costa Rica','Croatia','Czech Republic','Denmark','Ecuador','Egypt','England',
+'Estonia','Ethiopia','Faroe Islands','Finland','France','Georgia','Germany',
+'Ghana','Greece','Guatemala','Honduras','Hong Kong','Hungary','Iceland','India',
+'Indonesia','Iran','Iraq','Ireland','Israel','Italy','Ivory Coast','Jamaica',
+'Japan','Jordan','Kazakhstan','Kenya','Kosovo','Kuwait','Kyrgyzstan','Laos',
+'Latvia','Lebanon','Libya','Liechtenstein','Lithuania','Luxembourg','Macau',
+'Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Mauritania','Mexico',
+'Moldova','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia',
+'Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Macedonia',
+'Northern Ireland','Norway','Oman','Pakistan','Palestine','Panama','Paraguay','Peru',
+'Philippines','Poland','Portugal','Qatar','Republic of Ireland','Romania','Russia',
+'Rwanda','San Marino','Saudi Arabia','Scotland','Senegal','Serbia','Singapore',
+'Slovakia','Slovenia','South Africa','South Korea','South Sudan','Spain','Sri Lanka',
+'Sudan','Sweden','Switzerland','Syria','Tajikistan','Tanzania','Thailand','Togo',
+'Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Uganda','Ukraine',
+'United Arab Emirates','United States','Uruguay','Uzbekistan','Venezuela','Vietnam',
+'Wales','Yemen','Zambia','Zimbabwe',
 ];
 
 const FC_DARK   = '#0d1b2a', FC_CARD = '#132338', FC_BORDER = '#1e3a5f';

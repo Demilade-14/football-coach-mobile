@@ -1,4 +1,6 @@
 ﻿// app/SecurityPrivacyScreen.js
+// ✅ Fixed all garbled icons
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, TextInput, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -111,14 +113,14 @@ export default function SecurityPrivacyScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>† Back</Text>
+          <Text style={styles.backButton}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Security & Privacy</Text>
+        <Text style={styles.title}>🔒 Security & Privacy</Text>
       </View>
 
       {/* Privacy Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ðŸ”’ Privacy</Text>
+        <Text style={styles.sectionTitle}>🔐 Privacy</Text>
         
         <View style={styles.settingItem}>
           <View style={styles.settingContent}>
@@ -162,7 +164,7 @@ export default function SecurityPrivacyScreen() {
 
       {/* Security Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ðŸ›¡ï¸ Security</Text>
+        <Text style={styles.sectionTitle}>🛡️ Security</Text>
         
         <TouchableOpacity 
           style={styles.button}
@@ -180,7 +182,7 @@ export default function SecurityPrivacyScreen() {
 
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => Alert.alert('Login Activity', 'Recent logins:\n\n€¢ Today 2:30 PM - Mobile\n€¢ Yesterday 8:15 AM - Mobile\n€¢ Jan 25 6:45 PM - Mobile')}
+          onPress={() => Alert.alert('Login Activity', 'Recent logins:\n\n• Today 2:30 PM - Mobile\n• Yesterday 8:15 AM - Mobile\n• Jan 25 6:45 PM - Mobile')}
         >
           <Text style={styles.buttonText}>View Login Activity</Text>
         </TouchableOpacity>
@@ -188,7 +190,7 @@ export default function SecurityPrivacyScreen() {
 
       {/* Data Management */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ðŸ“Š Data Management</Text>
+        <Text style={styles.sectionTitle}>📊 Data Management</Text>
         
         <TouchableOpacity 
           style={[styles.button, styles.warningButton]} 
@@ -207,7 +209,7 @@ export default function SecurityPrivacyScreen() {
 
       {/* Policies */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ðŸ“‹ Policies</Text>
+        <Text style={styles.sectionTitle}>📋 Policies</Text>
         
         <TouchableOpacity style={styles.button} onPress={showPrivacyPolicy}>
           <Text style={styles.buttonText}>Privacy Policy</Text>
@@ -314,4 +316,3 @@ const styles = StyleSheet.create({
   footer: { alignItems: 'center', paddingVertical: 24, borderTopWidth: 1, borderTopColor: '#333', marginTop: 32 },
   footerText: { color: '#666', fontSize: 12 },
 });
-

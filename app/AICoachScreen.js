@@ -1,4 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿// app/AICoachScreen.js
+// ✅ Fixed all garbled icons
+
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
   Alert, Modal, TextInput 
@@ -7,6 +10,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOTIVATIONAL_QUOTES, TRANSLATIONS, containsProfanity } from '../src/utils/inspirations';
 import AdBanner from '../src/components/AdBanner';
+
 const AICoachScreen = () => {
   const router = useRouter();
   const [quotes, setQuotes] = useState([]);
@@ -18,14 +22,17 @@ const AICoachScreen = () => {
   const [newQuoteName, setNewQuoteName] = useState('');
   const [newQuoteText, setNewQuoteText] = useState('');
   const [customQuotes, setCustomQuotes] = useState([]);
+
   // Load custom quotes on mount
   useEffect(() => {
     loadCustomQuotes();
   }, []);
+
   // Load and filter quotes when category changes
   useEffect(() => {
     loadQuotes();
   }, [selectedCategory, customQuotes]);
+
   const loadCustomQuotes = async () => {
     try {
       const stored = await AsyncStorage.getItem('customQuotes');
@@ -37,6 +44,7 @@ const AICoachScreen = () => {
       console.error('Failed to load custom quotes:', err);
     }
   };
+
   const saveCustomQuotes = async (quotes) => {
     try {
       await AsyncStorage.setItem('customQuotes', JSON.stringify(quotes));
@@ -45,6 +53,7 @@ const AICoachScreen = () => {
       console.error('Failed to save custom quotes:', err);
     }
   };
+
   const loadQuotes = () => {
     let allQuotes = [];
     // Add quotes from inspirations.js
@@ -73,10 +82,12 @@ const AICoachScreen = () => {
     const shuffled = filtered.sort(() => Math.random() - 0.5);
     setFilteredQuotes(shuffled.slice(0, 10));
   };
+
   const handleRefresh = () => {
     loadQuotes();
     Alert.alert('Refreshed', 'New quotes loaded!');
   };
+
   const handleAddQuote = () => {
     if (!newQuoteName.trim() || !newQuoteText.trim()) {
       Alert.alert('Error', TRANSLATIONS[selectedLanguage].emptyFieldsError);
@@ -99,6 +110,7 @@ const AICoachScreen = () => {
     setShowAddModal(false);
     Alert.alert('Success', TRANSLATIONS[selectedLanguage].successMessage);
   };
+
   const getCategoryIcon = (category) => {
     const icons = {
       football: '⚽', basketball: '🏀', tennis: '🎾',
@@ -109,6 +121,7 @@ const AICoachScreen = () => {
     };
     return icons[category] || '💭';
   };
+
   const getCategoryLabel = (category) => {
     const labels = {
       football: TRANSLATIONS[selectedLanguage].football,
@@ -128,7 +141,9 @@ const AICoachScreen = () => {
     };
     return labels[category] || category;
   };
+
   const t = TRANSLATIONS[selectedLanguage];
+
   return (
     <View style={{ flex: 1, backgroundColor: '#0d1b2a' }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -148,6 +163,7 @@ const AICoachScreen = () => {
         </View>
         <Text style={styles.title}>🌟 Inspirations</Text>
         <Text style={styles.subtitle}>{t.inspirationFrom}</Text>
+
         {/* Category Filter */}
         <ScrollView 
           horizontal 
@@ -239,6 +255,7 @@ const AICoachScreen = () => {
             </Text>
           </TouchableOpacity>
         </ScrollView>
+
         {/* Add Quote Button */}
         <TouchableOpacity 
           style={styles.addQuoteButton}
@@ -246,6 +263,7 @@ const AICoachScreen = () => {
         >
           <Text style={styles.addQuoteButtonText}>➕ {t.addQuote}</Text>
         </TouchableOpacity>
+
         {/* Refresh Button */}
         <TouchableOpacity 
           style={styles.refreshButton}
@@ -253,6 +271,7 @@ const AICoachScreen = () => {
         >
           <Text style={styles.refreshButtonText}>🔄 {t.refreshQuotes}</Text>
         </TouchableOpacity>
+
         {/* Quotes Display */}
         {filteredQuotes.length > 0 ? (
           filteredQuotes.map((quote, index) => (
@@ -275,6 +294,7 @@ const AICoachScreen = () => {
             <Text style={styles.emptySubtext}>Try a different category or add your own!</Text>
           </View>
         )}
+
         {/* Language Picker Modal */}
         <Modal
           visible={showLanguagePicker}
@@ -310,6 +330,7 @@ const AICoachScreen = () => {
             </View>
           </View>
         </Modal>
+
         {/* Add Quote Modal */}
         <Modal
           visible={showAddModal}
@@ -361,7 +382,9 @@ const AICoachScreen = () => {
     </View>
   );
 };
+
 export default AICoachScreen;
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20 },
@@ -484,4 +507,3 @@ const styles = StyleSheet.create({
   },
   closeModalText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });
-

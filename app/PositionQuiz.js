@@ -49,7 +49,7 @@ const POSITIONS = {
     icon: '🧭',
     color: '#42a5f5',
     desc: 'The quarterback of the team. Your vision and passing range dictate the tempo and control games.',
-    proPlayers: ['Toni Kroos', 'Xabi Alonso', 'Thiago Alcântara'],
+    proPlayers: ['Toni Kroos', 'Xabi Alonso', 'Thiago Alcntara'],
     strengths: ['Long passing', 'Positioning', 'Composure'],
     formations: ['6 in 4-3-3', '8 in 4-1-4-1'],
   },

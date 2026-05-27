@@ -1,4 +1,7 @@
-﻿import React, { useState } from "react";
+﻿// app/AuthScreen.js
+// ✅ Fixed Firebase network error handling
+
+import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, ScrollView,
@@ -11,6 +14,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
+
 const AuthScreen = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -19,6 +23,7 @@ const AuthScreen = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const handleSkip = async () => {
     await AsyncStorage.setItem("user", JSON.stringify({
       uid: "guest-" + Date.now(),
@@ -28,6 +33,7 @@ const AuthScreen = () => {
     }));
     router.replace("/");
   };
+
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Please fill in all fields");
@@ -41,10 +47,20 @@ const AuthScreen = () => {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
+
+    // Check if Firebase is initialized
     if (!auth) {
-      Alert.alert("Error", "Firebase not initialized. Please restart the app or use guest mode.");
+      Alert.alert(
+        "Firebase Not Initialized",
+        "Please check your internet connection or use guest mode.",
+        [
+          { text: "Use Guest Mode", onPress: handleSkip },
+          { text: "Cancel", style: "cancel" }
+        ]
+      );
       return;
     }
+
     setLoading(true);
     try {
       if (isLogin) {
@@ -73,32 +89,39 @@ const AuthScreen = () => {
     } catch (error) {
       console.error("Auth error code:", error.code);
       console.error("Auth error message:", error.message);
-      let errorMessage = error.code + ": " + error.message;
-      if (error.code === "auth/email-already-in-use") {
+      
+      let errorMessage = error.message;
+      
+      if (error.code === "auth/network-request-failed") {
+        errorMessage = "No internet connection. Please check your network and try again.";
+      } else if (error.code === "auth/email-already-in-use") {
         errorMessage = "Email already registered. Please login instead.";
       } else if (error.code === "auth/invalid-email") {
         errorMessage = "Invalid email address format.";
       } else if (error.code === "auth/weak-password") {
         errorMessage = "Password too weak. Use at least 6 characters.";
-      } else if (error.code === "auth/network-request-failed") {
-        errorMessage = "No internet connection. Please check your network.";
-      } else if (error.code === "auth/invalid-credential" || error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
+      } else if (error.code === "auth/invalid-credential" || 
+                 error.code === "auth/user-not-found" || 
+                 error.code === "auth/wrong-password") {
         errorMessage = "Invalid email or password. Please check and try again.";
       } else if (error.code === "auth/operation-not-allowed") {
         errorMessage = "Email login is disabled in Firebase Console.";
       } else if (error.code === "auth/too-many-requests") {
         errorMessage = "Too many attempts. Please wait a few minutes.";
       }
+      
       Alert.alert("Auth Error", errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <Text style={styles.logo}>⚽</Text>
       <Text style={styles.title}>Football Coach</Text>
       <Text style={styles.subtitle}>Your Personal Training Assistant</Text>
+
       <View style={styles.form}>
         {!isLogin && (
           <TextInput
@@ -135,6 +158,7 @@ const AuthScreen = () => {
             <Text style={styles.eyeText}>{showPassword ? "👁" : "🔒"}</Text>
           </TouchableOpacity>
         </View>
+
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleAuth}
@@ -148,16 +172,19 @@ const AuthScreen = () => {
             </Text>
           )}
         </TouchableOpacity>
+
         <TouchableOpacity onPress={() => setIsLogin(!isLogin)} disabled={loading}>
           <Text style={styles.switchText}>
             {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
           </Text>
         </TouchableOpacity>
+
         <View style={styles.dividerRow}>
           <View style={styles.divider} />
           <Text style={styles.dividerText}>OR</Text>
           <View style={styles.divider} />
         </View>
+
         <TouchableOpacity style={styles.guestButton} onPress={handleSkip}>
           <Text style={styles.guestButtonText}>Continue as Guest</Text>
         </TouchableOpacity>
@@ -165,7 +192,9 @@ const AuthScreen = () => {
     </ScrollView>
   );
 };
+
 export default AuthScreen;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0d1b2a" },
   scrollContent: { flexGrow: 1, justifyContent: "center", padding: 20 },

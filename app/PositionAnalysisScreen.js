@@ -1,4 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿// app/PositionAnalysisScreen.js
+// ✅ Fixed all garbled icons
+
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
@@ -73,7 +76,7 @@ export default function PositionAnalysisScreen() {
         <Text style={styles.title}>Position Analysis</Text>
         <Text style={styles.noData}>No player data available</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>† Back</Text>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -100,7 +103,7 @@ export default function PositionAnalysisScreen() {
       </View>
 
       <View style={styles.allPositionsCard}>
-        <Text style={styles.cardTitle}>ðŸ“Š All Positions</Text>
+        <Text style={styles.cardTitle}>📊 All Positions</Text>
         <View style={styles.positionsGrid}>
           {Object.entries(positionScores).map(([position, score]) => (
             <View key={position} style={styles.positionItem}>
@@ -114,7 +117,7 @@ export default function PositionAnalysisScreen() {
       </View>
 
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backButtonText}>† Back to Player Card</Text>
+        <Text style={styles.backButtonText}>← Back to Player Card</Text>
       </TouchableOpacity>
     </ScrollView>
   );

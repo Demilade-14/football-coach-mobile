@@ -4,6 +4,7 @@
 // ✅ Outfield shows PAC/SHO/PAS/DRI/DEF/PHY
 // ✅ Tier-based border colors & badges
 // ✅ NaN-safe number handling
+// ✅ Smart flag lookup (handles full names, 3-letter & 2-letter codes)
 
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
@@ -73,18 +74,141 @@ const statColor = (val) => {
   return '#ef5350';
 };
 
-// Flag emoji map
+// ✅ Flag emoji map - ALL flags are complete 2-character regional indicators
+// Includes special tag sequences for England/Scotland/Wales
 const FLAG_MAP = {
-  England: '🏴󠁧󠁢󠁮󠁿', Scotland: '🏴󠁢󠁣', Wales: '🏴󠁧󠁢󠁬󠁿',
-  France: '🇫', Germany: '🇪', Spain: '🇪🇸', Italy: '🇮🇹',
-  Portugal: '🇵🇹', Netherlands: '🇳🇱', Belgium: '🇧🇪',
-  Brazil: '🇧🇷', Argentina: '🇦🇷', Nigeria: '🇳🇬', Ghana: '🇬🇭',
-  Senegal: '🇸🇳', 'South Africa': '🇿🇦', Egypt: '🇪',
-  'United States': '🇺🇸', Mexico: '🇲', Canada: '🇦',
-  Japan: '🇯🇵', 'South Korea': '🇰🇷', Australia: '🇦🇺',
-  China: '🇨🇳', India: '🇮🇳', Turkey: '🇹🇷', Poland: '🇵🇱',
-  Norway: '🇳🇴', Sweden: '🇸', Denmark: '🇩🇰', Switzerland: '🇨',
-  Austria: '🇹', Russia: '🇷🇺', Ukraine: '🇺🇦', 'Saudi Arabia': '🇸🇦',
+  // Full country names
+  'Afghanistan': '🇦🇫', 'Albania': '🇦🇱', 'Algeria': '🇩🇿', 'Argentina': '🇦🇷',
+  'Armenia': '🇦🇲', 'Australia': '🇦🇺', 'Austria': '🇦🇹', 'Azerbaijan': '🇦🇿',
+  'Bahrain': '🇧🇭', 'Bangladesh': '🇧🇩', 'Belarus': '🇧🇾', 'Belgium': '🇧🇪',
+  'Bolivia': '🇧🇴', 'Bosnia and Herzegovina': '🇧🇦', 'Brazil': '🇧🇷',
+  'Bulgaria': '🇧🇬', 'Burkina Faso': '🇧🇫', 'Cameroon': '🇨🇲', 'Canada': '🇨🇦',
+  'Chile': '🇨🇱', 'China': '🇨🇳', 'Colombia': '🇨🇴', 'Costa Rica': '🇨🇷',
+  'Croatia': '🇭🇷', 'Czech Republic': '🇨🇿', 'Denmark': '🇩🇰', 'Ecuador': '🇪🇨',
+  'Egypt': '🇪🇬', 'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Estonia': '🇪🇪', 'Ethiopia': '🇪🇹',
+  'Faroe Islands': '🇫🇴', 'Finland': '🇫🇮', 'France': '🇫🇷', 'Georgia': '🇬🇪',
+  'Germany': '🇩🇪', 'Ghana': '🇬🇭', 'Greece': '🇬🇷', 'Guatemala': '🇬🇹',
+  'Honduras': '🇭🇳', 'Hong Kong': '🇭🇰', 'Hungary': '🇭🇺', 'Iceland': '🇮🇸',
+  'India': '🇮🇳', 'Indonesia': '🇮🇩', 'Iran': '🇮🇷', 'Iraq': '🇮🇶',
+  'Ireland': '🇮🇪', 'Israel': '🇮🇱', 'Italy': '🇮🇹', 'Ivory Coast': '🇨🇮',
+  'Jamaica': '🇯🇲', 'Japan': '🇯🇵', 'Jordan': '🇯🇴', 'Kazakhstan': '🇰🇿',
+  'Kenya': '🇰🇪', 'Kosovo': '🇽🇰', 'Kuwait': '🇰🇼', 'Kyrgyzstan': '🇰🇬',
+  'Laos': '🇱🇦', 'Latvia': '🇱🇻', 'Lebanon': '🇱🇧', 'Libya': '🇱🇾',
+  'Liechtenstein': '🇱🇮', 'Lithuania': '🇱🇹', 'Luxembourg': '🇱🇺', 'Macau': '🇲🇴',
+  'Madagascar': '🇲🇬', 'Malawi': '🇲🇼', 'Malaysia': '🇲🇾', 'Maldives': '🇲🇻',
+  'Mali': '🇲🇱', 'Malta': '🇲🇹', 'Mauritania': '🇲🇷', 'Mexico': '🇲🇽',
+  'Moldova': '🇲🇩', 'Mongolia': '🇲🇳', 'Montenegro': '🇲🇪', 'Morocco': '🇲🇦',
+  'Mozambique': '🇲🇿', 'Myanmar': '🇲🇲', 'Namibia': '🇳🇦', 'Nepal': '🇳🇵',
+  'Netherlands': '🇳🇱', 'New Zealand': '🇳🇿', 'Nicaragua': '🇳🇮', 'Niger': '🇳🇪',
+  'Nigeria': '🇳🇬', 'North Macedonia': '🇲🇰', 'Northern Ireland': '🇬🇧',
+  'Norway': '🇳🇴', 'Oman': '🇴🇲', 'Pakistan': '🇵🇰', 'Palestine': '🇵🇸',
+  'Panama': '🇵🇦', 'Paraguay': '🇵🇾', 'Peru': '🇵🇪', 'Philippines': '🇵🇭',
+  'Poland': '🇵🇱', 'Portugal': '🇵🇹', 'Qatar': '🇶🇦', 'Republic of Ireland': '🇮🇪',
+  'Romania': '🇷🇴', 'Russia': '🇷🇺', 'Rwanda': '🇷🇼', 'San Marino': '🇸🇲',
+  'Saudi Arabia': '🇸🇦', 'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Senegal': '🇸🇳', 'Serbia': '🇷🇸',
+  'Singapore': '🇸🇬', 'Slovakia': '🇸🇰', 'Slovenia': '🇸🇮', 'South Africa': '🇿🇦',
+  'South Korea': '🇰🇷', 'South Sudan': '🇸🇸', 'Spain': '🇪🇸', 'Sri Lanka': '🇱🇰',
+  'Sudan': '🇸🇩', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭', 'Syria': '🇸🇾',
+  'Tajikistan': '🇹🇯', 'Tanzania': '🇹🇿', 'Thailand': '🇹🇭', 'Togo': '🇹🇬',
+  'Trinidad and Tobago': '🇹🇹', 'Tunisia': '🇹🇳', 'Turkey': '🇹🇷', 'Turkmenistan': '🇹🇲',
+  'Uganda': '🇺🇬', 'Ukraine': '🇺🇦', 'United Arab Emirates': '🇦🇪',
+  'United States': '🇺🇸', 'Uruguay': '🇺🇾', 'Uzbekistan': '🇺🇿', 'Venezuela': '🇻🇪',
+  'Vietnam': '🇻🇳', 'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'Yemen': '🇾🇪', 'Zambia': '🇿🇲', 'Zimbabwe': '🇿🇼',
+  
+  // 3-letter country codes (ISO 3166-1 alpha-3)
+  'AFG': '🇦🇫', 'ALB': '🇦🇱', 'DZA': '🇩🇿', 'ARG': '🇦🇷',
+  'ARM': '🇦🇲', 'AUS': '🇦🇺', 'AUT': '🇦🇹', 'AZE': '🇦🇿',
+  'BHR': '🇧🇭', 'BGD': '🇧🇩', 'BLR': '🇧🇾', 'BEL': '🇧🇪',
+  'BOL': '🇧🇴', 'BIH': '🇧🇦', 'BRA': '🇧🇷', 'BGR': '🇧🇬',
+  'BFA': '🇧🇫', 'CMR': '🇨🇲', 'CAN': '🇨🇦', 'CHL': '🇨🇱',
+  'CHN': '🇨🇳', 'COL': '🇨🇴', 'CRI': '🇨🇷', 'HRV': '🇭🇷',
+  'CZE': '🇨🇿', 'DNK': '🇩🇰', 'ECU': '🇪🇨', 'EGY': '🇪🇬',
+  'ENG': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'EST': '🇪🇪', 'ETH': '🇪🇹', 'FRO': '🇫🇴',
+  'FIN': '🇫🇮', 'FRA': '🇫🇷', 'GEO': '🇬🇪', 'DEU': '🇩🇪',
+  'GHA': '🇬🇭', 'GRC': '🇬🇷', 'GTM': '🇬🇹', 'HND': '🇭🇳',
+  'HKG': '🇭🇰', 'HUN': '🇭🇺', 'ISL': '🇮🇸', 'IND': '🇮🇳',
+  'IDN': '🇮🇩', 'IRN': '🇮🇷', 'IRQ': '🇮🇶', 'IRL': '🇮🇪',
+  'ISR': '🇮🇱', 'ITA': '🇮🇹', 'CIV': '🇨🇮', 'JAM': '🇯🇲',
+  'JPN': '🇯🇵', 'JOR': '🇯🇴', 'KAZ': '🇰🇿', 'KEN': '🇰🇪',
+  'XKX': '🇽🇰', 'KWT': '🇰🇼', 'KGZ': '🇰🇬', 'LAO': '🇱🇦',
+  'LVA': '🇱🇻', 'LBN': '🇱🇧', 'LBY': '🇱🇾', 'LIE': '🇱🇮',
+  'LTU': '🇱🇹', 'LUX': '🇱🇺', 'MAC': '🇲🇴', 'MDG': '🇲🇬',
+  'MWI': '🇲🇼', 'MYS': '🇲🇾', 'MDV': '🇲🇻', 'MLI': '🇲🇱',
+  'MLT': '🇲🇹', 'MRT': '🇲🇷', 'MEX': '🇲🇽', 'MDA': '🇲🇩',
+  'MNG': '🇲🇳', 'MNE': '🇲🇪', 'MAR': '🇲🇦', 'MOZ': '🇲🇿',
+  'MMR': '🇲🇲', 'NAM': '🇳🇦', 'NPL': '🇳🇵', 'NLD': '🇳🇱',
+  'NZL': '🇳🇿', 'NIC': '🇳🇮', 'NER': '🇳🇪', 'NGA': '🇳🇬',
+  'MKD': '🇲🇰', 'NIR': '🇬🇧', 'NOR': '🇳🇴', 'OMN': '🇴🇲',
+  'PAK': '🇵🇰', 'PSE': '🇵🇸', 'PAN': '🇵🇦', 'PRY': '🇵🇾',
+  'PER': '🇵🇪', 'PHL': '🇵🇭', 'POL': '🇵🇱', 'PRT': '🇵🇹',
+  'QAT': '🇶🇦', 'ROU': '🇷🇴', 'RUS': '🇷🇺', 'RWA': '🇷🇼',
+  'SMR': '🇸🇲', 'SAU': '🇸🇦', 'SCO': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'SEN': '🇸🇳',
+  'SRB': '🇷🇸', 'SGP': '🇸🇬', 'SVK': '🇸🇰', 'SVN': '🇸🇮',
+  'ZAF': '🇿🇦', 'KOR': '🇰🇷', 'SSD': '🇸🇸', 'ESP': '🇪🇸',
+  'LKA': '🇱🇰', 'SDN': '🇸🇩', 'SWE': '🇸🇪', 'CHE': '🇨🇭',
+  'SYR': '🇸🇾', 'TJK': '🇹🇯', 'TZA': '🇹🇿', 'THA': '🇹🇭',
+  'TGO': '🇹🇬', 'TTO': '🇹🇹', 'TUN': '🇹🇳', 'TUR': '🇹🇷',
+  'TKM': '🇹🇲', 'UGA': '🇺🇬', 'UKR': '🇺🇦', 'ARE': '🇦🇪',
+  'USA': '🇺🇸', 'URY': '🇺🇾', 'UZB': '🇺🇿', 'VEN': '🇻🇪',
+  'VNM': '🇻🇳', 'WAL': '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'YEM': '🇾🇪', 'ZMB': '🇿🇲',
+  'ZWE': '🇿🇼',
+  
+  // 2-letter country codes (ISO 3166-1 alpha-2)
+  'AF': '🇦🇫', 'AL': '🇦🇱', 'DZ': '🇩🇿', 'AR': '🇦🇷',
+  'AM': '🇦🇲', 'AU': '🇦🇺', 'AT': '🇦🇹', 'AZ': '🇦🇿',
+  'BH': '🇧🇭', 'BD': '🇧🇩', 'BY': '🇧🇾', 'BE': '🇧🇪',
+  'BO': '🇧🇴', 'BA': '🇧🇦', 'BR': '🇧🇷', 'BG': '🇧🇬',
+  'BF': '🇧🇫', 'CM': '🇨🇲', 'CA': '🇨🇦', 'CL': '🇨🇱',
+  'CN': '🇨🇳', 'CO': '🇨🇴', 'CR': '🇨🇷', 'HR': '🇭🇷',
+  'CZ': '🇨🇿', 'DK': '🇩🇰', 'EC': '🇪🇨', 'EG': '🇪🇬',
+  'GB-ENG': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'EE': '🇪🇪', 'ET': '🇪🇹', 'FO': '🇫🇴',
+  'FI': '🇫🇮', 'FR': '🇫🇷', 'GE': '🇬🇪', 'DE': '🇩🇪',
+  'GH': '🇬🇭', 'GR': '🇬🇷', 'GT': '🇬🇹', 'HN': '🇭🇳',
+  'HK': '🇭🇰', 'HU': '🇭🇺', 'IS': '🇮🇸', 'IN': '🇮🇳',
+  'ID': '🇮🇩', 'IR': '🇮🇷', 'IQ': '🇮🇶', 'IE': '🇮🇪',
+  'IL': '🇮🇱', 'IT': '🇮🇹', 'CI': '🇨🇮', 'JM': '🇯🇲',
+  'JP': '🇯🇵', 'JO': '🇯🇴', 'KZ': '🇰🇿', 'KE': '🇰🇪',
+  'XK': '🇽🇰', 'KW': '🇰🇼', 'KG': '🇰🇬', 'LA': '🇱🇦',
+  'LV': '🇱🇻', 'LB': '🇱🇧', 'LY': '🇱🇾', 'LI': '🇱🇮',
+  'LT': '🇱🇹', 'LU': '🇱🇺', 'MO': '🇲🇴', 'MG': '🇲🇬',
+  'MW': '🇲🇼', 'MY': '🇲🇾', 'MV': '🇲🇻', 'ML': '🇲🇱',
+  'MT': '🇲🇹', 'MR': '🇲🇷', 'MX': '🇲🇽', 'MD': '🇲🇩',
+  'MN': '🇲🇳', 'ME': '🇲🇪', 'MA': '🇲🇦', 'MZ': '🇲🇿',
+  'MM': '🇲🇲', 'NA': '🇳🇦', 'NP': '🇳🇵', 'NL': '🇳🇱',
+  'NZ': '🇳🇿', 'NI': '🇳🇮', 'NE': '🇳🇪', 'NG': '🇳🇬',
+  'MK': '🇲🇰', 'GB-NIR': '🇬🇧', 'NO': '🇳🇴', 'OM': '🇴🇲',
+  'PK': '🇵🇰', 'PS': '🇵🇸', 'PA': '🇵🇦', 'PY': '🇵🇾',
+  'PE': '🇵🇪', 'PH': '🇵🇭', 'PL': '🇵🇱', 'PT': '🇵🇹',
+  'QA': '🇶🇦', 'RO': '🇷🇴', 'RU': '🇷🇺', 'RW': '🇷🇼',
+  'SM': '🇸🇲', 'SA': '🇸🇦', 'GB-SCT': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'SN': '🇸🇳',
+  'RS': '🇷🇸', 'SG': '🇸🇬', 'SK': '🇸🇰', 'SI': '🇸🇮',
+  'ZA': '🇿🇦', 'KR': '🇰🇷', 'SS': '🇸🇸', 'ES': '🇪🇸',
+  'LK': '🇱🇰', 'SD': '🇸🇩', 'SE': '🇸🇪', 'CH': '🇨🇭',
+  'SY': '🇸🇾', 'TJ': '🇹🇯', 'TZ': '🇹🇿', 'TH': '🇹🇭',
+  'TG': '🇹🇬', 'TT': '🇹🇹', 'TN': '🇹🇳', 'TR': '🇹🇷',
+  'TM': '🇹🇲', 'UG': '🇺🇬', 'UA': '🇺🇦', 'AE': '🇦🇪',
+  'US': '🇺🇸', 'UY': '🇺🇾', 'UZ': '🇺🇿', 'VE': '🇻🇪',
+  'VN': '🇻🇳', 'GB-WLS': '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'YE': '🇾🇪', 'ZM': '🇿🇲',
+  'ZW': '🇿🇼'
+};
+
+// ✅ Smart flag lookup helper - handles full names, 3-letter & 2-letter codes
+const getFlag = (nationality) => {
+  if (!nationality) return '🌍';
+  
+  // Try exact match first (case-sensitive)
+  if (FLAG_MAP[nationality]) return FLAG_MAP[nationality];
+  
+  // Try uppercase match
+  const upper = nationality.toUpperCase();
+  if (FLAG_MAP[upper]) return FLAG_MAP[upper];
+  
+  // Try title case (first letter uppercase)
+  const title = nationality.charAt(0).toUpperCase() + nationality.slice(1).toLowerCase();
+  if (FLAG_MAP[title]) return FLAG_MAP[title];
+  
+  // Fallback to globe
+  return '🌍';
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -122,7 +246,9 @@ const PlayerCard = ({ player = {} }) => {
   
   // ✅ Safe stats based on position
   const stats = isGK ? getGKStats(attrs) : getOutfieldStats(attrs);
-  const flag = FLAG_MAP[nationality] || '🌍';
+  
+  // ✅ Get flag with smart lookup
+  const flag = getFlag(nationality);
 
   // ✅ Safe values for display (prevent NaN in <Text>)
   const safeSkillMoves = Math.min(5, Math.max(0, safeNumber(skillMoves, 3)));
