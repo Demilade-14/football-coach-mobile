@@ -13,6 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import DraggableSlider from '../src/components/DraggableSlider';
 import PlayerCard from '../src/components/PlayerCard';
+import AdBanner from '../src/components/AdBanner';
 import {
   getImprovementTips,
   savePlayer,

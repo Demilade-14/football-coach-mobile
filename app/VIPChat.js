@@ -20,7 +20,6 @@ import {
   Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSubscription } from "../src/context/SubscriptionContext";
 import {
   loadMessages,
   saveMessages,
