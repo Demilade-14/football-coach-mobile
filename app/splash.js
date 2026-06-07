@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { footballQuotes } from '../src/utils/inspirations';
+import { MOTIVATIONAL_QUOTES } from '../src/utils/inspirations';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function SplashScreen() {
 
   useEffect(() => {
     // Pick random quote
-    const randomQuote = footballQuotes[Math.floor(Math.random() * footballQuotes.length)];
+    const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
     setQuote(randomQuote);
 
     // Fade in animation
@@ -95,3 +95,4 @@ const styles = StyleSheet.create({
   quoteContainer: { marginTop: 40, paddingHorizontal: 30, alignItems: 'center' },
   quoteText: { color: '#a8dadc', fontSize: 13, fontStyle: 'italic', textAlign: 'center', lineHeight: 20 },
 });
+
