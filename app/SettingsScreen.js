@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { exportAllData, exportTrainingSessions, generateProgressReport } from '../src/utils/exportSystem';
+
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -31,21 +31,11 @@ export default function SettingsScreen() {
   };
 
   const handleExportSessions = async () => {
-    const result = await exportTrainingSessions();
-    if (result.success) {
-      Alert.alert('Success', `Sessions exported: ${result.fileName}`);
-    } else {
-      Alert.alert('Error', result.error);
-    }
+    Alert.alert('Export', 'Export feature coming soon!');
   };
 
   const handleGenerateReport = async () => {
-    const result = await generateProgressReport();
-    if (result.success) {
-      Alert.alert('Success', `Report generated: ${result.fileName}`);
-    } else {
-      Alert.alert('Error', result.error);
-    }
+    Alert.alert('Export', 'Export feature coming soon!');
   };
 
   const handleDeleteAccount = () => {
